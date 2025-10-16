@@ -3,7 +3,7 @@ import { FlatList, StyleSheet, View, useWindowDimensions, ActivityIndicator, Tex
 import { MealCard } from './MealCard';
 import { Meal } from '@/constants/mockMeals'; // garder le type Meal
 
-const SPACING = 16;
+const SPACING = 18;
 const MIN_CARD_WIDTH = 160;
 
 export const MealList: React.FC = () => {
@@ -47,7 +47,6 @@ export const MealList: React.FC = () => {
   }, [meals, numColumns]);
 
   const renderItem = ({ item }: { item: Meal | null }) => {
-    console.log("id", item?._id);
     if (!item) return <View style={[styles.cardWrapper, { width: cardWidth }]} />;
     return (
       <View style={[styles.cardWrapper, { width: cardWidth }]}>
@@ -74,7 +73,8 @@ export const MealList: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: SPACING,
+    paddingVertical: SPACING,
+    paddingHorizontal: SPACING / 2,
   },
   row: {
     justifyContent: 'space-between',
