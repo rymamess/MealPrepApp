@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Meal } from '@/constants/mockMeals';
+import { ThemedView } from './themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 
@@ -16,8 +17,11 @@ export const MealCard: React.FC<Props> = ({ meal }) => {
 
   return (
     <Pressable
-style={[styles.card, { borderColor: '#ccc', backgroundColor: theme.background }]}
-      onPress={() => router.push(`/meals/${meal.id}`)}
+      style={[
+        styles.card,
+        { borderColor: theme.border, backgroundColor: theme.card },
+      ]}
+      onPress={() => router.push(`/meals/${meal._id}`)}
     >
       <Image source={{ uri: meal.photo }} style={styles.image} />
       <View style={styles.info}>
@@ -48,4 +52,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
   },
+  container: {
+    flex: 1,
+    maxWidth: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+  }
 });

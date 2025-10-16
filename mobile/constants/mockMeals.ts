@@ -9,7 +9,7 @@ export type Spice = {
 };
 
 export type Meal = {
-  id: string;
+  _id: string;
   name: string;
   photo: string; // URL ou require('@/assets/xxx.png')
   prepTime: string;
@@ -24,7 +24,7 @@ export type Meal = {
 
 export const MOCK_MEALS: Meal[] = [
   {
-    id: '1',
+    _id: '1',
     name: 'Salade méditerranéenne',
     photo: 'https://cdn.pratico-pratiques.com/app/uploads/sites/3/2018/08/20200225/salade-grecque-feta-et-edamames.jpeg',
     prepTime: '10 min',
@@ -43,22 +43,5 @@ export const MOCK_MEALS: Meal[] = [
       { name: 'Poivre', quantity: '½ tsp' },
     ],
     description: 'Coupez tous les légumes, mélangez avec la feta et les épices.',
-  },
-  {
-    id: '2',
-    name: 'Omelette aux champignons',
-    photo: 'https://images.ricardocuisine.com/services/recipes/992x1340_7920-portrait.jpg',
-    prepTime: '5 min',
-    cookTime: '10 min',
-    difficulty: 'Easy',
-    servings: 1,
-    category: 'Breakfast',
-    ingredients: [
-      { name: 'Œufs', quantity: '3' },
-      { name: 'Champignons', quantity: '100g' },
-      { name: 'Lait', quantity: '50ml' },
-    ],
-    spices: [{ name: 'Sel', quantity: '½ tsp' }],
-    description: 'Battre les œufs avec le lait, ajouter les champignons et cuire à la poêle.',
-  },
+  }
 ];

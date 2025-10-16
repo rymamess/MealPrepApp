@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
 // GET meal by ID
 router.get("/:id", async (req, res) => {
   try {
-    const meal = await Meal.findById(req.params.id);
+    const meal = await Meal.findOne({ _id: req.params.id });
     if (!meal) return res.status(404).json({ error: "Meal not found" });
     res.json(meal);
   } catch (err) {
