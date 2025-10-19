@@ -29,4 +29,5 @@ export type UserMeal = Meal & {
   groupId?: string;        // Optionnel : pour partager dans un groupe
   createdAt: string;       // ISO date string
   updatedAt?: string;      // Optionnel
+  baseMealId?: string;
 };

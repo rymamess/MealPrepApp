@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View, useWindowDimensions, ActivityIndicator, Text } from 'react-native';
 import { MealCard } from './MealCard';
-import { Meal } from '@/constants/types'; // garder le type Meal
+import { Meal } from '@/types/types'; // garder le type Meal
 
 const SPACING = 18;
 const MIN_CARD_WIDTH = 160;
