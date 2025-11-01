@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View, useWindowDimensions, ActivityIndicator, Text } from 'react-native';
 import { MealCard } from './MealCard';
-import { Meal } from '@/types/types'; // garder le type Meal
+import { Meal } from '@/types/Meal';
+import { fetchMeals } from '@/services/mealService';
 
 const SPACING = 18;
 const MIN_CARD_WIDTH = 160;
@@ -22,21 +23,19 @@ export const MealList: React.FC = () => {
   }, [width, numColumns]);
 
   // 🔹 Fetch des repas depuis le BE
-  useEffect(() => {
-    const fetchMeals = async () => {
-      try {
-        const res = await fetch('https://refactored-goldfish-jq7grq67vj5fjjg-5000.app.github.dev/meals'); // changer si URL publique
-        if (!res.ok) throw new Error('Erreur lors de la récupération des repas');
-        const data = await res.json();
-        setMeals(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMeals();
-  }, []);
+useEffect(() => {
+  const getMeals = async () => {
+    try {
+      const data = await fetchMeals();
+      setMeals(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  getMeals();
+}, []);
 
   // 🔹 Ajouter des placeholders pour compléter la dernière ligne
   const data = useMemo(() => {

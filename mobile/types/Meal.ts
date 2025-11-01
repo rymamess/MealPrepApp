@@ -1,5 +1,3 @@
-//TODO: RENOMMER POUR TYPES
-
 export type Ingredient = {
   name: string;
   quantity: string;
@@ -22,12 +20,4 @@ export type Meal = {
   ingredients: Ingredient[];
   spices: Spice[];
   description: string;
-};
-
-export type UserMeal = Meal & {
-  userId: string;          // ID du créateur
-  groupId?: string;        // Optionnel : pour partager dans un groupe
-  createdAt: string;       // ISO date string
-  updatedAt?: string;      // Optionnel
-  baseMealId?: string;
 };

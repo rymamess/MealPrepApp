@@ -13,6 +13,8 @@ router.get("/", async (req, res) => {
   }
 });
 
+console.log("test");
+
 // GET meal by ID
 router.get("/:id", async (req, res) => {
   try {

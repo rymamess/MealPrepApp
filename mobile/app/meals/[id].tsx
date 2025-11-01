@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, Image, ActivityIndicator, View } from 're
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { Meal } from '@/types/types';
+import { Meal } from '@/types/Meal';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
 

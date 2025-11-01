@@ -8,7 +8,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-
   const theme = Colors[colorScheme ?? 'light'];
 
   return (
@@ -17,7 +16,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: theme.tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
+      {/* Tab par défaut → Mes recettes */}
       <Tabs.Screen
         name="index"
         options={{
@@ -25,6 +26,8 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
+
+      {/* Tab Explore → toutes les recettes */}
       <Tabs.Screen
         name="explore"
         options={{
