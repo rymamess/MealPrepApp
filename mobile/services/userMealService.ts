@@ -2,9 +2,8 @@ import { API_BASE_URL } from "@/constants/config";
 import { UserMeal } from "@/types/UserMeal";
 
 // 🔹 GET all user meals
-console.log("ici");
 export const getUserMeals = async (): Promise<UserMeal[]> => {
- const res = await fetch(`${API_BASE_URL}/userMeals`);
+  const res = await fetch(`${API_BASE_URL}/userMeals`);
   if (!res.ok) throw new Error("Erreur lors de la récupération des recettes de l'utilisateur");
   return res.json();
 };
