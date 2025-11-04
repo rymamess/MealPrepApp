@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { UserMeal } from '@/types/UserMeal';
 
@@ -43,12 +43,24 @@ const visibilityOptions: SegmentOption<'private' | 'group'>[] = [
   { label: 'Groupe', value: 'group' },
 ];
 
+const steps = [
+  { key: 'basics', title: 'Base', caption: 'Nom, image et histoire de ta recette.' },
+  { key: 'profile', title: 'Profil', caption: 'Catégorie, difficulté et temps requis.' },
+  { key: 'composition', title: 'Composition', caption: 'Ingrédients et épices à rassembler.' },
+] as const;
+
+type StepKey = (typeof steps)[number]['key'];
+
 export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submitLabel = 'Enregistrer' }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
 
   const ingredients = useMemo(() => meal.ingredients ?? [], [meal.ingredients]);
   const spices = useMemo(() => meal.spices ?? [], [meal.spices]);
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+
+  const activeStep = steps[activeStepIndex];
+  const isLastStep = activeStepIndex === steps.length - 1;
 
   const handleListChange = (
     listKey: 'ingredients' | 'spices',
@@ -72,198 +84,302 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
     onChange(listKey, updated);
   };
 
+  const handleStepPress = (index: number) => {
+    setActiveStepIndex(index);
+  };
+
+  const handleNext = () => {
+    setActiveStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+  };
+
+  const handlePrevious = () => {
+    setActiveStepIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const renderStep = (stepKey: StepKey) => {
+    switch (stepKey) {
+      case 'basics':
+        return (
+          <View style={styles.fieldGroup}>
+            <InputField
+              label="Nom de la recette"
+              placeholder="Bols de pâtes crémeux..."
+              value={meal.name}
+              onChangeText={(text) => onChange('name', text)}
+              theme={theme}
+            />
+            <InputField
+              label="Photo (URL)"
+              placeholder="https://..."
+              value={meal.photo}
+              onChangeText={(text) => onChange('photo', text)}
+              theme={theme}
+              autoCapitalize="none"
+            />
+            <InputField
+              label="Description"
+              placeholder="Décris l'histoire ou les étapes clés de ta recette."
+              value={meal.description}
+              onChangeText={(text) => onChange('description', text)}
+              theme={theme}
+              multiline
+            />
+          </View>
+        );
+      case 'profile':
+        return (
+          <View style={styles.fieldGroup}>
+            <View style={styles.segmentBlock}>
+              <Text style={[styles.label, { color: theme.text }]}>Catégorie</Text>
+              <SegmentedControl
+                options={categories}
+                value={meal.category ?? 'Lunch'}
+                onChange={(value) => onChange('category', value)}
+                themeTint={theme.tint}
+                themeText={theme.text}
+              />
+            </View>
+
+            <View style={styles.segmentBlock}>
+              <Text style={[styles.label, { color: theme.text }]}>Difficulté</Text>
+              <SegmentedControl
+                options={difficulties}
+                value={meal.difficulty ?? 'Easy'}
+                onChange={(value) => onChange('difficulty', value)}
+                themeTint={theme.tint}
+                themeText={theme.text}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <InputField
+                label="Préparation (min)"
+                placeholder="15"
+                value={meal.prepTime ?? ''}
+                onChangeText={(text) => onChange('prepTime', text.replace(/[^0-9]/g, ''))}
+                theme={theme}
+                keyboardType="number-pad"
+              />
+              <InputField
+                label="Cuisson (min)"
+                placeholder="30"
+                value={meal.cookTime ?? ''}
+                onChangeText={(text) => onChange('cookTime', text.replace(/[^0-9]/g, ''))}
+                theme={theme}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <InputField
+                label="Portions"
+                placeholder="4"
+                value={meal.servings ? String(meal.servings) : ''}
+                onChangeText={(text) => {
+                  const normalized = text.replace(/[^0-9]/g, '');
+                  onChange('servings', normalized ? parseInt(normalized, 10) : 0);
+                }}
+                theme={theme}
+                keyboardType="number-pad"
+              />
+              <View style={styles.segmentBlock}>
+                <Text style={[styles.label, { color: theme.text }]}>Visibilité</Text>
+                <SegmentedControl
+                  options={visibilityOptions}
+                  value={(meal.visibility as 'private' | 'group') ?? 'private'}
+                  onChange={(value) => onChange('visibility', value)}
+                  themeTint={theme.tint}
+                  themeText={theme.text}
+                />
+              </View>
+            </View>
+          </View>
+        );
+      case 'composition':
+      default:
+        return (
+          <View style={styles.fieldGroup}>
+            <EditableList
+              title="Ingrédients"
+              emptyHint="Ajoute chaque ingrédient avec sa quantité."
+              addLabel="Ajouter un ingrédient"
+              items={ingredients}
+              onItemChange={(index, field, value) => handleListChange('ingredients', index, field, value)}
+              onAdd={() => handleAddItem('ingredients')}
+              onRemove={(index) => handleRemoveItem('ingredients', index)}
+              theme={theme}
+            />
+
+            <EditableList
+              title="Épices"
+              emptyHint="Optionnel, mais parfait pour noter les saveurs clés."
+              addLabel="Ajouter une épice"
+              items={spices}
+              onItemChange={(index, field, value) => handleListChange('spices', index, field, value)}
+              onAdd={() => handleAddItem('spices')}
+              onRemove={(index) => handleRemoveItem('spices', index)}
+              theme={theme}
+            />
+          </View>
+        );
+    }
+  };
+
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={[styles.heading, { color: theme.text }]}>Créer une nouvelle recette</Text>
-
-      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Informations générales</Text>
-        <Text style={[styles.label, { color: theme.text }]}>Nom de la recette</Text>
-        <TextInput
-          style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-          placeholder="Bols de pâtes crémeux..."
-          placeholderTextColor={`${theme.text}55`}
-          value={meal.name}
-          onChangeText={(text) => onChange('name', text)}
-        />
-
-        <Text style={[styles.label, { color: theme.text }]}>Photo (URL)</Text>
-        <TextInput
-          style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-          placeholder="https://..."
-          placeholderTextColor={`${theme.text}55`}
-          value={meal.photo}
-          onChangeText={(text) => onChange('photo', text)}
-          autoCapitalize="none"
-        />
-
-        <Text style={[styles.label, { color: theme.text }]}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.multiline, { borderColor: theme.border, color: theme.text }]}
-          placeholder="Décris l'histoire ou les étapes clés de ta recette."
-          placeholderTextColor={`${theme.text}55`}
-          value={meal.description}
-          onChangeText={(text) => onChange('description', text)}
-          multiline
-          textAlignVertical="top"
-        />
-      </View>
-
-      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Profil de la recette</Text>
-
-        <Text style={[styles.label, { color: theme.text }]}>Catégorie</Text>
-        <SegmentedControl
-          options={categories}
-          value={meal.category ?? 'Lunch'}
-          onChange={(value) => onChange('category', value)}
-          themeTint={theme.tint}
-          themeText={theme.text}
-        />
-
-        <Text style={[styles.label, { color: theme.text }]}>Difficulté</Text>
-        <SegmentedControl
-          options={difficulties}
-          value={meal.difficulty ?? 'Easy'}
-          onChange={(value) => onChange('difficulty', value)}
-          themeTint={theme.tint}
-          themeText={theme.text}
-        />
-
-        <View style={styles.row}>
-          <View style={styles.halfField}>
-            <Text style={[styles.label, { color: theme.text }]}>Préparation (min)</Text>
-            <TextInput
-              style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-              keyboardType="number-pad"
-              value={meal.prepTime ?? ''}
-              onChangeText={(text) => onChange('prepTime', text.replace(/[^0-9]/g, ''))}
-              placeholder="15"
-              placeholderTextColor={`${theme.text}55`}
-            />
-          </View>
-
-          <View style={styles.halfField}>
-            <Text style={[styles.label, { color: theme.text }]}>Cuisson (min)</Text>
-            <TextInput
-              style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-              keyboardType="number-pad"
-              value={meal.cookTime ?? ''}
-              onChangeText={(text) => onChange('cookTime', text.replace(/[^0-9]/g, ''))}
-              placeholder="30"
-              placeholderTextColor={`${theme.text}55`}
-            />
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <View style={styles.halfField}>
-            <Text style={[styles.label, { color: theme.text }]}>Portions</Text>
-            <TextInput
-              style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-              keyboardType="number-pad"
-              value={meal.servings ? String(meal.servings) : ''}
-              onChangeText={(text) => {
-                const normalized = text.replace(/[^0-9]/g, '');
-                onChange('servings', normalized ? parseInt(normalized, 10) : 0);
-              }}
-              placeholder="4"
-              placeholderTextColor={`${theme.text}55`}
-            />
-          </View>
-
-          <View style={styles.halfField}>
-            <Text style={[styles.label, { color: theme.text }]}>Visibilité</Text>
-            <SegmentedControl
-              options={visibilityOptions}
-              value={(meal.visibility as 'private' | 'group') ?? 'private'}
-              onChange={(value) => onChange('visibility', value)}
-              themeTint={theme.tint}
-              themeText={theme.text}
-            />
-          </View>
+      <View style={styles.header}>
+        <Text style={[styles.heading, { color: theme.text }]}>Ta nouvelle recette</Text>
+        <Text style={[styles.caption, { color: `${theme.text}99` }]}>{activeStep.caption}</Text>
+        <View style={[styles.stepper, { backgroundColor: `${theme.border}55` }]}>
+          {steps.map((step, index) => {
+            const isActive = index === activeStepIndex;
+            const isCompleted = index < activeStepIndex;
+            return (
+              <Pressable
+                key={step.key}
+                style={[styles.stepPill, isActive && { backgroundColor: theme.tint }]}
+                onPress={() => handleStepPress(index)}
+              >
+                <Text
+                  style={[
+                    styles.stepPillLabel,
+                    {
+                      color: isActive ? '#fff' : isCompleted ? theme.tint : `${theme.text}aa`,
+                    },
+                  ]}
+                >
+                  {step.title}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
       <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Ingrédients</Text>
-        {ingredients.length === 0 ? (
-          <Text style={[styles.helperText, { color: `${theme.text}80` }]}>Ajoute chaque ingrédient avec sa quantité.</Text>
+        {renderStep(activeStep.key)}
+      </View>
+
+      <View style={styles.footerActions}>
+        {activeStepIndex > 0 ? (
+          <Pressable style={[styles.secondaryButton, { borderColor: theme.border }]} onPress={handlePrevious}>
+            <Text style={[styles.secondaryLabel, { color: theme.text }]}>Retour</Text>
+          </Pressable>
         ) : null}
-        {ingredients.map((ingredient, index) => (
-          <View key={`ingredient-${index}`} style={styles.listRow}>
-            <TextInput
-              style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
-              placeholder="Nom"
-              placeholderTextColor={`${theme.text}55`}
-              value={ingredient.name}
-              onChangeText={(text) => handleListChange('ingredients', index, 'name', text)}
-            />
-            <TextInput
-              style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
-              placeholder="Quantité"
-              placeholderTextColor={`${theme.text}55`}
-              value={ingredient.quantity}
-              onChangeText={(text) => handleListChange('ingredients', index, 'quantity', text)}
-            />
-            <Pressable
-              style={[styles.removeChip, { borderColor: theme.border }]}
-              onPress={() => handleRemoveItem('ingredients', index)}
-            >
-              <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
-            </Pressable>
-          </View>
-        ))}
+
         <Pressable
-          style={[styles.addButton, { borderColor: theme.border }]}
-          onPress={() => handleAddItem('ingredients')}
+          style={[styles.primaryButton, { backgroundColor: theme.tint }]}
+          onPress={isLastStep ? onSubmit : handleNext}
         >
-          <Text style={[styles.addLabel, { color: theme.tint }]}>+ Ajouter un ingrédient</Text>
+          <Text style={styles.primaryLabel}>{isLastStep ? submitLabel : 'Continuer'}</Text>
         </Pressable>
       </View>
-
-      <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Épices</Text>
-        {spices.length === 0 ? (
-          <Text style={[styles.helperText, { color: `${theme.text}80` }]}>Optionnel, mais parfait pour noter les saveurs clés.</Text>
-        ) : null}
-        {spices.map((spice, index) => (
-          <View key={`spice-${index}`} style={styles.listRow}>
-            <TextInput
-              style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
-              placeholder="Nom"
-              placeholderTextColor={`${theme.text}55`}
-              value={spice.name}
-              onChangeText={(text) => handleListChange('spices', index, 'name', text)}
-            />
-            <TextInput
-              style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
-              placeholder="Quantité"
-              placeholderTextColor={`${theme.text}55`}
-              value={spice.quantity}
-              onChangeText={(text) => handleListChange('spices', index, 'quantity', text)}
-            />
-            <Pressable
-              style={[styles.removeChip, { borderColor: theme.border }]}
-              onPress={() => handleRemoveItem('spices', index)}
-            >
-              <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
-            </Pressable>
-          </View>
-        ))}
-        <Pressable style={[styles.addButton, { borderColor: theme.border }]} onPress={() => handleAddItem('spices')}>
-          <Text style={[styles.addLabel, { color: theme.tint }]}>+ Ajouter une épice</Text>
-        </Pressable>
-      </View>
-
-      <Pressable style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={onSubmit}>
-        <Text style={styles.submitLabel}>{submitLabel}</Text>
-      </Pressable>
     </ScrollView>
+  );
+};
+
+type InputFieldProps = {
+  label: string;
+  value?: string;
+  placeholder: string;
+  onChangeText: (text: string) => void;
+  theme: ThemeColors;
+  multiline?: boolean;
+  keyboardType?: 'default' | 'number-pad';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+};
+
+const InputField: React.FC<InputFieldProps> = ({
+  label,
+  value,
+  placeholder,
+  onChangeText,
+  theme,
+  multiline = false,
+  keyboardType = 'default',
+  autoCapitalize,
+}) => {
+  return (
+    <View style={styles.inputBlock}>
+      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+      <TextInput
+        style={[
+          styles.input,
+          multiline && styles.multiline,
+          { borderColor: theme.border, color: theme.text },
+        ]}
+        placeholder={placeholder}
+        placeholderTextColor={`${theme.text}55`}
+        value={value}
+        onChangeText={onChangeText}
+        multiline={multiline}
+        textAlignVertical={multiline ? 'top' : 'auto'}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+      />
+    </View>
+  );
+};
+
+type EditableListProps = {
+  title: string;
+  emptyHint: string;
+  addLabel: string;
+  items: { name: string; quantity: string }[];
+  onItemChange: (index: number, field: 'name' | 'quantity', value: string) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  theme: ThemeColors;
+};
+
+const EditableList: React.FC<EditableListProps> = ({
+  title,
+  emptyHint,
+  addLabel,
+  items,
+  onItemChange,
+  onAdd,
+  onRemove,
+  theme,
+}) => {
+  return (
+    <View style={styles.listSection}>
+      <View style={styles.listHeader}>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.itemCount, { color: `${theme.text}88` }]}>{items.length} élément(s)</Text>
+      </View>
+      {items.length === 0 ? (
+        <Text style={[styles.helperText, { color: `${theme.text}80` }]}>{emptyHint}</Text>
+      ) : null}
+      {items.map((item, index) => (
+        <View key={`${title}-${index}`} style={styles.listRow}>
+          <TextInput
+            style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
+            placeholder="Nom"
+            placeholderTextColor={`${theme.text}55`}
+            value={item.name}
+            onChangeText={(text) => onItemChange(index, 'name', text)}
+          />
+          <TextInput
+            style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
+            placeholder="Quantité"
+            placeholderTextColor={`${theme.text}55`}
+            value={item.quantity}
+            onChangeText={(text) => onItemChange(index, 'quantity', text)}
+          />
+          <Pressable style={[styles.removeChip, { borderColor: theme.border }]} onPress={() => onRemove(index)}>
+            <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
+          </Pressable>
+        </View>
+      ))}
+      <Pressable style={[styles.addButton, { borderColor: theme.border }]} onPress={onAdd}>
+        <Text style={[styles.addLabel, { color: theme.tint }]}>+ {addLabel}</Text>
+      </Pressable>
+    </View>
   );
 };
 
@@ -313,26 +429,35 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 24,
-    paddingBottom: 48,
-    gap: 24,
+    paddingBottom: 56,
+    gap: 20,
   },
   heading: {
     fontSize: 24,
     fontWeight: '700',
     letterSpacing: -0.2,
-    marginTop: 12,
+  },
+  caption: {
+    marginTop: 8,
+    fontSize: 14,
+    lineHeight: 20,
   },
   section: {
-    padding: 20,
-    borderRadius: 20,
+    padding: 22,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: 16,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
+  },
+  itemCount: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontWeight: '600',
   },
   label: {
     fontSize: 14,
@@ -344,21 +469,18 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 14,
+    borderRadius: 16,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 15,
   },
   multiline: {
-    minHeight: 110,
+    minHeight: 130,
   },
   row: {
     flexDirection: 'row',
     gap: 16,
-  },
-  halfField: {
-    flex: 1,
-    gap: 8,
+    flexWrap: 'wrap',
   },
   segmentContainer: {
     flexDirection: 'row',
@@ -406,17 +528,74 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  submitButton: {
+  header: {
+    gap: 12,
+  },
+  stepper: {
+    flexDirection: 'row',
+    borderRadius: 999,
+    padding: 6,
+    gap: 6,
+  },
+  stepPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 999,
+    alignItems: 'center',
+  },
+  stepPillLabel: {
+    fontWeight: '600',
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
+  fieldGroup: {
+    gap: 20,
+  },
+  segmentBlock: {
+    gap: 8,
+    flex: 1,
+  },
+  inputBlock: {
+    gap: 8,
+    flex: 1,
+  },
+  listSection: {
+    gap: 16,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  footerActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 40,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderWidth: 1,
     borderRadius: 999,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 32,
+    justifyContent: 'center',
   },
-  submitLabel: {
+  secondaryLabel: {
+    fontWeight: '600',
+    fontSize: 14,
+    letterSpacing: 0.2,
+  },
+  primaryButton: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryLabel: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
   },
