@@ -1,7 +1,7 @@
 // meals/[id].tsx
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, Image, ActivityIndicator, View } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { Meal } from '@/types/Meal';
@@ -10,7 +10,6 @@ import { Colors } from '@/constants/theme';
 
 export default function MealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
 
