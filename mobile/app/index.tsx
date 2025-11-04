@@ -89,28 +89,27 @@ export default function HomeScreen() {
       )
     : (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>Créez votre première recette</Text>
-          <Text style={[styles.emptyText, { color: theme.text }]}>Ajoutez vos idées favorites et retrouvez-les en un clin d’œil.</Text>
-          <Pressable style={[styles.primaryButton, { backgroundColor: theme.tint }]} onPress={handleCreate}>
-            <Text style={[styles.primaryButtonLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>Créer une recette</Text>
-          </Pressable>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Ajoutez votre première création</Text>
+          <Text style={[styles.emptyText, { color: theme.text }]}>Utilisez le bouton « + » pour composer une nouvelle recette personnelle.</Text>
         </View>
       );
 
   return (
     <ThemedView style={styles.container}>
-      <View style={[styles.hero, { backgroundColor: theme.card }]}> 
-        <Text style={[styles.heroEyebrow, { color: theme.text }]}>MealPrep App</Text>
-        <Text style={[styles.heroTitle, { color: theme.text }]}>Planifiez vos repas avec style</Text>
-        <Text style={[styles.heroSubtitle, { color: theme.text }]}>Une expérience unifiée pour explorer et gérer vos recettes préférées.</Text>
-        <View style={styles.heroActions}>
-          <Pressable style={[styles.primaryButton, { backgroundColor: theme.tint }]} onPress={() => setSegment('discover')}>
-            <Text style={[styles.primaryButtonLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>Explorer</Text>
-          </Pressable>
-          <Pressable style={[styles.secondaryButton, { borderColor: theme.border }]} onPress={handleCreate}>
-            <Text style={[styles.secondaryButtonLabel, { color: theme.text }]}>Créer une recette</Text>
-          </Pressable>
+      <View style={[styles.topBar, { borderColor: `${theme.border}66`, backgroundColor: theme.card }]}>
+        <View style={styles.topBarCopy}>
+          <Text style={[styles.topBarLabel, { color: theme.text }]}>Recettes</Text>
+          <Text style={[styles.topBarSubtitle, { color: theme.text }]}>Explorez la communauté ou organisez vos propres plats.</Text>
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Ajouter une recette"
+          hitSlop={8}
+          style={[styles.fab, { backgroundColor: theme.tint }]}
+          onPress={handleCreate}
+        >
+          <Text style={[styles.fabLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>+</Text>
+        </Pressable>
       </View>
 
       <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.card }]}> 
@@ -157,62 +156,57 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  hero: {
-    margin: 24,
+  topBar: {
+    marginHorizontal: 24,
+    marginTop: 24,
     marginBottom: 16,
-    padding: 28,
+    padding: 20,
     borderRadius: 24,
-    gap: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
   },
-  heroEyebrow: {
-    fontSize: 13,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    opacity: 0.7,
+  topBarCopy: {
+    flex: 1,
+    gap: 4,
   },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 34,
+  topBarLabel: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
-  heroSubtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+  topBarSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
     opacity: 0.75,
   },
-  heroActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+  fab: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  primaryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
-  },
-  primaryButtonLabel: {
-    fontSize: 15,
+  fabLabel: {
+    fontSize: 28,
     fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-  secondaryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  secondaryButtonLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+    marginTop: -4,
   },
   segmentedControl: {
     flexDirection: 'row',
     marginHorizontal: 24,
     borderRadius: 20,
     padding: 6,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   segmentButton: {
     flex: 1,
