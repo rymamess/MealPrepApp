@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Alert, ActivityIndicator, Text, View } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { UserMealForm } from "@/components/UserMealForm";
-import { getUserMeal, updateUserMeal } from "@/services/userMealsService";
+import { getUserMeal, updateUserMeal } from "@/services/userMealService";
 import { UserMeal } from "@/types/UserMeal";
 
 export default function EditUserMealPage() {

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { UserMealForm } from "@/components/UserMealForm";
-import { createUserMeal } from "@/services/userMealsService";
+import { createUserMeal } from "@/services/userMealService";
 import { UserMeal } from "@/types/UserMeal";
 
 export default function NewUserMealPage() {

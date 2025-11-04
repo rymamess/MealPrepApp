@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, FlatList, Button, Alert, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { UserMeal } from "@/types/UserMeal";
-import { deleteUserMeal, getUserMeals } from "@/services/userMealsService";
+import { deleteUserMeal, getUserMeals } from "@/services/userMealService";
 import { MealCard } from "@/components/MealCard";
 
 export default function UserMealsPage() {
