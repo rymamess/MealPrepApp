@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
+import { Text, TextInput, Button, StyleSheet, ScrollView } from "react-native";
 import { UserMeal } from "@/types/UserMeal";
 import { Picker } from "@react-native-picker/picker";
 
