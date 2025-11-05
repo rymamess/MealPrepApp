@@ -52,6 +52,10 @@ export default function HomeScreen() {
 
   const handleCreate = () => router.push('/userMeals/new');
 
+  const handleOpenUserMeal = (id: string) => {
+    router.push({ pathname: '/userMeals/[id]', params: { id } });
+  };
+
   const confirmDelete = (id: string) => {
     Alert.alert('Supprimer la recette', 'Voulez-vous vraiment supprimer cette création ?', [
       { text: 'Annuler', style: 'cancel' },
@@ -74,7 +78,18 @@ export default function HomeScreen() {
   const renderCard = (meal: Meal) => {
     if (segment === 'personal') {
       const userMeal = meal as UserMeal;
-      return <MealCard meal={userMeal} footer={<UserMealActions onEdit={() => router.push({ pathname: '/userMeals/edit/[id]', params: { id: userMeal._id } })} onDelete={() => confirmDelete(userMeal._id)} />} />;
+      return (
+        <MealCard
+          meal={userMeal}
+          onPress={() => handleOpenUserMeal(userMeal._id)}
+          footer={
+            <UserMealActions
+              onEdit={() => router.push({ pathname: '/userMeals/edit/[id]', params: { id: userMeal._id } })}
+              onDelete={() => confirmDelete(userMeal._id)}
+            />
+          }
+        />
+      );
     }
 
     return <MealCard meal={meal} />;

@@ -10,9 +10,7 @@ export const getUserMeals = async (): Promise<UserMeal[]> => {
 
 // 🔹 GET one user meal
 export const getUserMeal = async (id: string): Promise<UserMeal> => {
-  const res = await fetch(`${API_BASE_URL}/userMeals/${id}`, {
-    credentials: "include",
-  });
+  const res = await fetch(`${API_BASE_URL}/userMeals/${id}`);
   if (!res.ok) throw new Error("Recette introuvable");
   return res.json();
 };
