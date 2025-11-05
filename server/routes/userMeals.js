@@ -56,4 +56,47 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// 🔹 PUT update a user meal
+router.put("/:id", async (req, res) => {
+  try {
+    const disallowedFields = ["_id", "id", "userId", "createdAt", "updatedAt"];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([key]) => !disallowedFields.includes(key))
+    );
+
+    const updatedMeal = await UserMeal.findOneAndUpdate(
+      { _id: req.params.id, userId: HARDCODED_USER_ID },
+      {
+        $set: {
+          ...updates,
+          updatedAt: new Date(),
+        },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedMeal) return res.status(404).json({ error: "UserMeal not found" });
+    res.json(updatedMeal);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 🔹 DELETE remove a user meal
+router.delete("/:id", async (req, res) => {
+  try {
+    const deletedMeal = await UserMeal.findOneAndDelete({
+      _id: req.params.id,
+      userId: HARDCODED_USER_ID,
+    });
+
+    if (!deletedMeal) return res.status(404).json({ error: "UserMeal not found" });
+    res.json({ message: "UserMeal deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
