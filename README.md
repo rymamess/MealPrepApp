@@ -32,3 +32,13 @@ MealPrepApp/
 │   └─ assets/            # Images, icônes
 │
 └─ README.md
+
+## Commandes utiles
+
+Depuis la racine du dépôt, utilisez les scripts npm suivants :
+
+- `npm run mobile:start` – lance Expo en mode standard à l’intérieur du dossier `mobile/`.
+- `npm run mobile:start:tunnel` – lance Expo avec l’option `--tunnel` sans erreur de `package.json` manquante.
+- `npm run mobile:lint` – exécute l’analyse ESLint du projet mobile.
+
+> 💡 Expo recherche un `package.json` à la racine courante. Les scripts ci-dessus redirigent automatiquement les commandes vers `mobile/`, ce qui évite l’erreur `ConfigError: The expected package.json path ... does not exist` rencontrée avec `npx expo start --tunnel` exécuté depuis la racine.

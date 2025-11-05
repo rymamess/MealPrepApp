@@ -1,0 +1,13 @@
+{
+  "name": "mealprepapp-monorepo",
+  "private": true,
+  "workspaces": [
+    "mobile",
+    "server"
+  ],
+  "scripts": {
+    "mobile:start": "npm run start --prefix mobile",
+    "mobile:start:tunnel": "npm run start --prefix mobile -- --tunnel",
+    "mobile:lint": "npm run lint --prefix mobile"
+  }
+}
