@@ -20,6 +20,10 @@ export default function UserMealsPage() {
 
   const handleCreate = () => router.push('/userMeals/new');
 
+  const handleOpenMeal = (id: string) => {
+    router.push({ pathname: '/userMeals/[id]', params: { id } });
+  };
+
   const confirmDelete = (id: string) => {
     Alert.alert('Supprimer la recette', 'Voulez-vous vraiment supprimer cette création ?', [
       { text: 'Annuler', style: 'cancel' },
@@ -63,7 +67,9 @@ export default function UserMealsPage() {
         loading={loading}
         error={error}
         keyExtractor={(item) => item._id}
-        renderItem={(item) => <MealCard meal={item} footer={renderFooter(item)} />}
+        renderItem={(item) => (
+          <MealCard meal={item} onPress={() => handleOpenMeal(item._id)} footer={renderFooter(item)} />
+        )}
         refreshing={refreshing}
         onRefresh={refresh}
         onRetry={retry}

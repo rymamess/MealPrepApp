@@ -2,22 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 
 import { MealDetailContent } from '@/components/MealDetailContent';
-import { fetchMealById } from '@/services/mealService';
-import { Meal } from '@/types/Meal';
+import { getUserMeal } from '@/services/userMealService';
+import { UserMeal } from '@/types/UserMeal';
 
-export default function MealDetailScreen() {
+export default function UserMealDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [meal, setMeal] = useState<Meal | null>(null);
+  const [meal, setMeal] = useState<UserMeal | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadMeal = async (mealId: string) => {
+    const loadUserMeal = async (mealId: string) => {
       try {
-        const data = await fetchMealById(mealId);
+        const data = await getUserMeal(mealId);
         setMeal(data);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur lors de la récupération du repas';
+        const message = err instanceof Error ? err.message : "Erreur lors de la récupération de la recette";
         setError(message);
       } finally {
         setLoading(false);
@@ -27,7 +27,7 @@ export default function MealDetailScreen() {
     if (typeof id === 'string') {
       setLoading(true);
       setError(null);
-      loadMeal(id);
+      loadUserMeal(id);
     } else {
       setMeal(null);
       setError('Identifiant de recette invalide');
