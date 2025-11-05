@@ -88,6 +88,7 @@ export function MealGrid<T>({
 
   return (
     <FlatList
+      key={numColumns}
       data={dataWithPlaceholders}
       keyExtractor={(item, index) => (item ? keyExtractor(item, index) : `placeholder-${index}`)}
       numColumns={numColumns}
