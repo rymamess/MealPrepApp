@@ -59,13 +59,18 @@ router.get("/:id", async (req, res) => {
 // 🔹 PUT update a user meal
 router.put("/:id", async (req, res) => {
   try {
-    const { _id, userId, createdAt, ...updatableFields } = req.body;
+    const disallowedFields = ["_id", "id", "userId", "createdAt", "updatedAt"];
+    const updates = Object.fromEntries(
+      Object.entries(req.body).filter(([key]) => !disallowedFields.includes(key))
+    );
 
     const updatedMeal = await UserMeal.findOneAndUpdate(
       { _id: req.params.id, userId: HARDCODED_USER_ID },
       {
-        ...updatableFields,
-        updatedAt: new Date(),
+        $set: {
+          ...updates,
+          updatedAt: new Date(),
+        },
       },
       { new: true, runValidators: true }
     );
