@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,6 +9,8 @@ import {
   View,
   Pressable,
 } from 'react-native';
+
+import * as ImagePicker from 'expo-image-picker';
 
 import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -108,13 +112,11 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
               onChangeText={(text) => onChange('name', text)}
               theme={theme}
             />
-            <InputField
-              label="Photo (URL)"
-              placeholder="https://..."
+            <PhotoPickerField
+              label="Photo"
               value={meal.photo}
-              onChangeText={(text) => onChange('photo', text)}
+              onChange={(uri) => onChange('photo', uri)}
               theme={theme}
-              autoCapitalize="none"
             />
             <InputField
               label="Description"
@@ -279,6 +281,163 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
         </Pressable>
       </View>
     </ScrollView>
+  );
+};
+
+type PhotoPickerFieldProps = {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  theme: ThemeColors;
+};
+
+const getAssetMimeType = (asset: ImagePicker.ImagePickerAsset) => {
+  if (asset.mimeType) {
+    return asset.mimeType;
+  }
+
+  const extension = asset.uri.split('.').pop()?.toLowerCase();
+
+  switch (extension) {
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'heic':
+    case 'heif':
+      return 'image/heic';
+    default:
+      return 'image/jpeg';
+  }
+};
+
+const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onChange, theme }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const ensurePermission = async (source: 'camera' | 'library') => {
+    const permission =
+      source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Permission requise',
+        source === 'camera'
+          ? "Nous avons besoin d'accéder à la caméra pour prendre une photo de ta recette."
+          : "Nous avons besoin d'accéder à ta galerie pour sélectionner une photo.",
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const handlePick = async (source: 'camera' | 'library') => {
+    const hasPermission = await ensurePermission(source);
+    if (!hasPermission) return;
+
+    try {
+      setIsProcessing(true);
+
+      const pickerOptions: ImagePicker.ImagePickerOptions = {
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true,
+      };
+
+      const result =
+        source === 'camera'
+          ? await ImagePicker.launchCameraAsync(pickerOptions)
+          : await ImagePicker.launchImageLibraryAsync(pickerOptions);
+
+      if (result.canceled) return;
+
+      const asset = result.assets?.[0];
+      if (!asset) {
+        Alert.alert('Erreur', "Impossible de récupérer l'image sélectionnée.");
+        return;
+      }
+
+      if (!asset.base64) {
+        Alert.alert('Erreur', "Impossible de convertir l'image sélectionnée.");
+        return;
+      }
+
+      const dataUrl = `data:${getAssetMimeType(asset)};base64,${asset.base64}`;
+      onChange(dataUrl);
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erreur', "Une erreur est survenue lors de la sélection de l'image.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRemove = () => {
+    if (!isProcessing) {
+      onChange('');
+    }
+  };
+
+  return (
+    <View style={styles.inputBlock}>
+      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+      {value ? (
+        <>
+          <View style={[styles.photoPreview, { borderColor: theme.border }]}>
+            <Image source={{ uri: value }} style={styles.photo} />
+          </View>
+          <Pressable
+            style={[
+              styles.removeChip,
+              styles.removePhotoChip,
+              { borderColor: theme.border, opacity: isProcessing ? 0.6 : 1 },
+            ]}
+            onPress={handleRemove}
+            disabled={isProcessing}
+          >
+            <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer la photo</Text>
+          </Pressable>
+        </>
+      ) : (
+        <View style={[styles.photoPlaceholder, { borderColor: theme.border }]}>
+          <Text style={[styles.helperText, { color: `${theme.text}80`, textAlign: 'center' }]}>
+            Ajoute une image depuis ta galerie ou en prenant une photo.
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.photoActions}>
+        <Pressable
+          style={[
+            styles.photoActionButton,
+            styles.photoActionSecondary,
+            { borderColor: theme.border, opacity: isProcessing ? 0.6 : 1 },
+          ]}
+          onPress={() => handlePick('library')}
+          disabled={isProcessing}
+        >
+          <Text style={[styles.photoActionLabel, { color: theme.text }]}>
+            {isProcessing ? 'Patiente…' : 'Depuis la galerie'}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.photoActionButton,
+            styles.photoActionPrimary,
+            { backgroundColor: theme.tint, opacity: isProcessing ? 0.6 : 1 },
+          ]}
+          onPress={() => handlePick('camera')}
+          disabled={isProcessing}
+        >
+          <Text style={[styles.photoActionLabel, styles.photoActionPrimaryLabel]}>
+            {isProcessing ? 'Patiente…' : 'Prendre une photo'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
   );
 };
 
@@ -492,6 +651,53 @@ const styles = StyleSheet.create({
   helperText: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  photoPreview: {
+    width: '100%',
+    height: 180,
+    borderRadius: 20,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  photoPlaceholder: {
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 180,
+    width: '100%',
+  },
+  photoActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  photoActionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoActionSecondary: {
+    borderWidth: 1,
+  },
+  photoActionPrimary: {},
+  photoActionLabel: {
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  photoActionPrimaryLabel: {
+    color: '#fff',
+  },
+  removePhotoChip: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
   input: {
     borderWidth: 1,
