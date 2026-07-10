@@ -18,15 +18,15 @@ async function createUserMeal() {
       prepTime: 10,
       cookTime: 0,
       difficulty: 'easy',
-      portions: 2,
+      servings: 2,
       ingredients: [
-        { name: 'quinoa', quantity: '100g' },
-        { name: 'tomate', quantity: '50g' },
-        { name: 'concombre', quantity: '50g' },
+        { name: 'quinoa', quantity: 100, unit: 'g' },
+        { name: 'tomate', quantity: 50, unit: 'g' },
+        { name: 'concombre', quantity: 50, unit: 'g' },
       ],
       spices: [
-        { name: 'sel', quantity: '1 pincée' },
-        { name: 'poivre', quantity: '1 pincée' },
+        { name: 'sel', quantity: 1, unit: 'pincée' },
+        { name: 'poivre', quantity: 1, unit: 'pincée' },
       ],
       description: 'Une salade saine et rapide à préparer',
     });

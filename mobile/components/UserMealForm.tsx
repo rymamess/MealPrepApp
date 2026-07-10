@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 
 import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Ingredient, Unit, UNITS } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
 
 type Props = {
@@ -58,6 +60,7 @@ type StepKey = (typeof steps)[number]['key'];
 export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submitLabel = 'Enregistrer' }) => {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+  const tintContrastColor = getRelativeLuminance(theme.tint) > 0.65 ? '#111' : '#fff';
 
   const ingredients = useMemo(() => meal.ingredients ?? [], [meal.ingredients]);
   const spices = useMemo(() => meal.spices ?? [], [meal.spices]);
@@ -69,8 +72,8 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
   const handleListChange = (
     listKey: 'ingredients' | 'spices',
     index: number,
-    field: 'name' | 'quantity',
-    value: string,
+    field: 'name' | 'quantity' | 'unit',
+    value: string | number,
   ) => {
     const list = listKey === 'ingredients' ? ingredients : spices;
     const updated = list.map((item, idx) => (idx === index ? { ...item, [field]: value } : item));
@@ -79,7 +82,8 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
 
   const handleAddItem = (listKey: 'ingredients' | 'spices') => {
     const list = listKey === 'ingredients' ? ingredients : spices;
-    onChange(listKey, [...list, { name: '', quantity: '' }]);
+    const defaultUnit: Unit = listKey === 'spices' ? 'pincée' : 'g';
+    onChange(listKey, [...list, { name: '', quantity: 0, unit: defaultUnit }]);
   };
 
   const handleRemoveItem = (listKey: 'ingredients' | 'spices', index: number) => {
@@ -250,7 +254,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                   style={[
                     styles.stepPillLabel,
                     {
-                      color: isActive ? '#fff' : isCompleted ? theme.tint : `${theme.text}aa`,
+                      color: isActive ? tintContrastColor : isCompleted ? theme.tint : `${theme.text}aa`,
                     },
                   ]}
                 >
@@ -277,7 +281,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
           style={[styles.primaryButton, { backgroundColor: theme.tint }]}
           onPress={isLastStep ? onSubmit : handleNext}
         >
-          <Text style={styles.primaryLabel}>{isLastStep ? submitLabel : 'Continuer'}</Text>
+          <Text style={[styles.primaryLabel, { color: tintContrastColor }]}>{isLastStep ? submitLabel : 'Continuer'}</Text>
         </Pressable>
       </View>
     </ScrollView>
@@ -313,6 +317,7 @@ const getAssetMimeType = (asset: ImagePicker.ImagePickerAsset) => {
 
 const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onChange, theme }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const tintContrastColor = getRelativeLuminance(theme.tint) > 0.65 ? '#111' : '#fff';
 
   const ensurePermission = async (source: 'camera' | 'library') => {
     const permission =
@@ -432,7 +437,7 @@ const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onCha
           onPress={() => handlePick('camera')}
           disabled={isProcessing}
         >
-          <Text style={[styles.photoActionLabel, styles.photoActionPrimaryLabel]}>
+          <Text style={[styles.photoActionLabel, { color: tintContrastColor }]}>
             {isProcessing ? 'Patiente…' : 'Prendre une photo'}
           </Text>
         </Pressable>
@@ -488,8 +493,8 @@ type EditableListProps = {
   title: string;
   emptyHint: string;
   addLabel: string;
-  items: { name: string; quantity: string }[];
-  onItemChange: (index: number, field: 'name' | 'quantity', value: string) => void;
+  items: Ingredient[];
+  onItemChange: (index: number, field: 'name' | 'quantity' | 'unit', value: string | number) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
   theme: ThemeColors;
@@ -515,24 +520,42 @@ const EditableList: React.FC<EditableListProps> = ({
         <Text style={[styles.helperText, { color: `${theme.text}80` }]}>{emptyHint}</Text>
       ) : null}
       {items.map((item, index) => (
-        <View key={`${title}-${index}`} style={styles.listRow}>
+        <View key={`${title}-${index}`} style={[styles.listItem, { borderColor: theme.border }]}>
           <TextInput
-            style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
+            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
             placeholder="Nom"
             placeholderTextColor={`${theme.text}55`}
             value={item.name}
             onChangeText={(text) => onItemChange(index, 'name', text)}
           />
-          <TextInput
-            style={[styles.input, styles.listInput, { borderColor: theme.border, color: theme.text }]}
-            placeholder="Quantité"
-            placeholderTextColor={`${theme.text}55`}
-            value={item.quantity}
-            onChangeText={(text) => onItemChange(index, 'quantity', text)}
-          />
-          <Pressable style={[styles.removeChip, { borderColor: theme.border }]} onPress={() => onRemove(index)}>
-            <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
-          </Pressable>
+          <View style={styles.listRow}>
+            <TextInput
+              style={[styles.input, styles.quantityInput, { borderColor: theme.border, color: theme.text }]}
+              placeholder="Qté"
+              placeholderTextColor={`${theme.text}55`}
+              value={item.quantity ? String(item.quantity) : ''}
+              onChangeText={(text) => {
+                const normalized = text.replace(/[^0-9.,]/g, '').replace(',', '.');
+                onItemChange(index, 'quantity', normalized ? parseFloat(normalized) : 0);
+              }}
+              keyboardType="decimal-pad"
+            />
+            <View style={[styles.unitPicker, { borderColor: theme.border }]}>
+              <Picker
+                selectedValue={item.unit}
+                onValueChange={(value) => onItemChange(index, 'unit', value)}
+                style={{ color: theme.text }}
+                dropdownIconColor={theme.text}
+              >
+                {UNITS.map((unit) => (
+                  <Picker.Item key={unit} label={unit} value={unit} />
+                ))}
+              </Picker>
+            </View>
+            <Pressable style={[styles.removeChip, { borderColor: theme.border }]} onPress={() => onRemove(index)}>
+              <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
+            </Pressable>
+          </View>
         </View>
       ))}
       <Pressable style={[styles.addButton, { borderColor: theme.border }]} onPress={onAdd}>
@@ -692,9 +715,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  photoActionPrimaryLabel: {
-    color: '#fff',
-  },
   removePhotoChip: {
     marginTop: 8,
     alignSelf: 'flex-start',
@@ -729,13 +749,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 13,
   },
+  listItem: {
+    gap: 10,
+    paddingBottom: 14,
+    marginBottom: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
   },
-  listInput: {
+  quantityInput: {
     flex: 1,
+  },
+  unitPicker: {
+    flex: 1.4,
+    borderWidth: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   removeChip: {
     paddingHorizontal: 12,
@@ -825,7 +857,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryLabel: {
-    color: '#fff',
     fontWeight: '700',
     fontSize: 15,
     letterSpacing: 0.4,

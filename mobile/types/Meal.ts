@@ -1,12 +1,14 @@
+export const UNITS = ['g', 'kg', 'ml', 'l', 'unité', 'c. à soupe', 'c. à café', 'pincée', 'tasse', 'au goût'] as const;
+
+export type Unit = (typeof UNITS)[number];
+
 export type Ingredient = {
   name: string;
-  quantity: string;
+  quantity: number;
+  unit: Unit;
 };
 
-export type Spice = {
-  name: string;
-  quantity: string;
-};
+export type Spice = Ingredient;
 
 export type Meal = {
   _id: string;

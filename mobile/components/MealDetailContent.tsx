@@ -46,7 +46,7 @@ export const MealDetailContent: React.FC<Props> = ({ meal, loading, error }) => 
           Ingredients:
         </ThemedText>
         {meal.ingredients?.map((ing, idx) => (
-          <Text key={idx} style={{ color: theme.text }}>{`${ing.name} - ${ing.quantity}`}</Text>
+          <Text key={idx} style={{ color: theme.text }}>{`${ing.name} - ${ing.quantity} ${ing.unit}`}</Text>
         ))}
       </ScrollView>
 
@@ -55,7 +55,7 @@ export const MealDetailContent: React.FC<Props> = ({ meal, loading, error }) => 
           Spices:
         </ThemedText>
         {meal.spices?.map((sp, idx) => (
-          <Text key={idx} style={{ color: theme.text }}>{`${sp.name} - ${sp.quantity}`}</Text>
+          <Text key={idx} style={{ color: theme.text }}>{`${sp.name} - ${sp.quantity} ${sp.unit}`}</Text>
         ))}
       </ScrollView>
 

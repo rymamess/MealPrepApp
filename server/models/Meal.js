@@ -1,8 +1,11 @@
 import mongoose from "mongoose";
 
+export const UNITS = ['g', 'kg', 'ml', 'l', 'unité', 'c. à soupe', 'c. à café', 'pincée', 'tasse', 'au goût'];
+
 export const IngredientSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  quantity: { type: String, required: true }
+  quantity: { type: Number, required: true, min: 0 },
+  unit: { type: String, enum: UNITS, required: true }
 });
 
 export const MealBaseSchema = new mongoose.Schema({
@@ -12,7 +15,7 @@ export const MealBaseSchema = new mongoose.Schema({
   prepTime: { type: Number },
   cookTime: { type: Number },
   difficulty: { type: String, enum: ['Easy','Medium','Hard'] },
-  portions: { type: Number },
+  servings: { type: Number },
   ingredients: [IngredientSchema],
   spices: [IngredientSchema],
   description: { type: String },
