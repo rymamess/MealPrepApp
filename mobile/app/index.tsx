@@ -116,15 +116,26 @@ export default function HomeScreen() {
           <Text style={[styles.topBarLabel, { color: theme.text }]}>Recettes</Text>
           <Text style={[styles.topBarSubtitle, { color: theme.text }]}>Explorez la communauté ou organisez vos propres plats.</Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter une recette"
-          hitSlop={8}
-          style={[styles.fab, { backgroundColor: theme.tint }]}
-          onPress={handleCreate}
-        >
-          <Text style={[styles.fabLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>+</Text>
-        </Pressable>
+        <View style={styles.topBarActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Profil"
+            hitSlop={8}
+            style={[styles.profileButton, { borderColor: theme.border }]}
+            onPress={() => router.push('/profile')}
+          >
+            <Text style={styles.profileLabel}>👤</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une recette"
+            hitSlop={8}
+            style={[styles.fab, { backgroundColor: theme.tint }]}
+            onPress={handleCreate}
+          >
+            <Text style={[styles.fabLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>+</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.card }]}> 
@@ -196,6 +207,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     opacity: 0.75,
+  },
+  topBarActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  profileButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileLabel: {
+    fontSize: 20,
   },
   fab: {
     width: 48,

@@ -3,19 +3,27 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootNavigator() {
+  const { token, loading } = useAuth();
+
+  if (loading) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack
-        screenOptions={{
-          headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: '600' },
-        }}
-      >
+    <Stack
+      screenOptions={{
+        headerShadowVisible: false,
+        headerTitleStyle: { fontWeight: '600' },
+      }}
+    >
+      <Stack.Protected guard={!token}>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+      </Stack.Protected>
+
+      <Stack.Protected guard={!!token}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="meals/index" options={{ title: 'Toutes les recettes' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Détails de la recette' }} />
@@ -23,9 +31,22 @@ export default function RootLayout() {
         <Stack.Screen name="userMeals/[id]" options={{ title: 'Détails de ma recette' }} />
         <Stack.Screen name="userMeals/new" options={{ title: 'Nouvelle recette' }} />
         <Stack.Screen name="userMeals/edit/[id]" options={{ title: 'Modifier la recette' }} />
+        <Stack.Screen name="profile" options={{ title: 'Profil' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-    </ThemeProvider>
+      </Stack.Protected>
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <AuthProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <RootNavigator />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

@@ -1,16 +1,22 @@
 import { API_BASE_URL } from "@/constants/config";
+import { getToken } from "@/services/tokenStorage";
 import { UserMeal } from "@/types/UserMeal";
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 // 🔹 GET all user meals
 export const getUserMeals = async (): Promise<UserMeal[]> => {
-  const res = await fetch(`${API_BASE_URL}/userMeals`);
+  const res = await fetch(`${API_BASE_URL}/userMeals`, { headers: await authHeaders() });
   if (!res.ok) throw new Error("Erreur lors de la récupération des recettes de l'utilisateur");
   return res.json();
 };
 
 // 🔹 GET one user meal
 export const getUserMeal = async (id: string): Promise<UserMeal> => {
-  const res = await fetch(`${API_BASE_URL}/userMeals/${id}`);
+  const res = await fetch(`${API_BASE_URL}/userMeals/${id}`, { headers: await authHeaders() });
   if (!res.ok) throw new Error("Recette introuvable");
   return res.json();
 };
@@ -19,7 +25,7 @@ export const getUserMeal = async (id: string): Promise<UserMeal> => {
 export const createUserMeal = async (mealData: Partial<UserMeal>): Promise<UserMeal> => {
   const res = await fetch(`${API_BASE_URL}/userMeals`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     credentials: "include",
     body: JSON.stringify(mealData),
   });
@@ -31,7 +37,7 @@ export const createUserMeal = async (mealData: Partial<UserMeal>): Promise<UserM
 export const updateUserMeal = async (id: string, mealData: Partial<UserMeal>): Promise<UserMeal> => {
   const res = await fetch(`${API_BASE_URL}/userMeals/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     credentials: "include",
     body: JSON.stringify(mealData),
   });
@@ -43,6 +49,7 @@ export const updateUserMeal = async (id: string, mealData: Partial<UserMeal>): P
 export const deleteUserMeal = async (id: string): Promise<{ message: string }> => {
   const res = await fetch(`${API_BASE_URL}/userMeals/${id}`, {
     method: "DELETE",
+    headers: await authHeaders(),
     credentials: "include",
   });
   if (!res.ok) throw new Error("Impossible de supprimer la recette");

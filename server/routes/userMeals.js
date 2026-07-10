@@ -1,17 +1,14 @@
 import express from "express";
-import mongoose from "mongoose";
 import UserMeal from "../models/UserMeal.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = express.Router();
 
-// 🔹 Hardcode userId pour l'instant
-const HARDCODED_USER_ID = new mongoose.Types.ObjectId("64f1234567890abcdef12345");
-
 // 🔹 GET all user meals
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     console.log("GET /userMeals");
-    const userMeals = await UserMeal.find({ userId: HARDCODED_USER_ID });
+    const userMeals = await UserMeal.find({ userId: req.userId });
     console.log(`Found ${userMeals.length} userMeals`);
     res.json(userMeals);
   } catch (err) {
@@ -21,13 +18,12 @@ router.get("/", async (req, res) => {
 });
 
 // 🔹 POST create a user meal
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     console.log("POST /userMeals Body:", req.body);
 
-    // Crée le document en utilisant le HARDCODED_USER_ID
     const newMeal = new UserMeal({
-      userId: HARDCODED_USER_ID,
+      userId: req.userId,
       visibility: req.body.visibility || "private",
       ...req.body, // champs comme name, category, ingredients, etc.
     });
@@ -42,11 +38,11 @@ router.post("/", async (req, res) => {
 });
 
 // 🔹 GET one user meal
-router.get("/:id", async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const meal = await UserMeal.findOne({
       _id: req.params.id,
-      userId: HARDCODED_USER_ID,
+      userId: req.userId,
     });
     if (!meal) return res.status(404).json({ error: "UserMeal not found" });
     res.json(meal);
@@ -57,7 +53,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // 🔹 PUT update a user meal
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const disallowedFields = ["_id", "id", "userId", "createdAt", "updatedAt"];
     const updates = Object.fromEntries(
@@ -65,7 +61,7 @@ router.put("/:id", async (req, res) => {
     );
 
     const updatedMeal = await UserMeal.findOneAndUpdate(
-      { _id: req.params.id, userId: HARDCODED_USER_ID },
+      { _id: req.params.id, userId: req.userId },
       {
         $set: {
           ...updates,
@@ -84,11 +80,11 @@ router.put("/:id", async (req, res) => {
 });
 
 // 🔹 DELETE remove a user meal
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const deletedMeal = await UserMeal.findOneAndDelete({
       _id: req.params.id,
-      userId: HARDCODED_USER_ID,
+      userId: req.userId,
     });
 
     if (!deletedMeal) return res.status(404).json({ error: "UserMeal not found" });

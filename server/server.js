@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
+import authRouter from "./routes/auth.js";
 import mealsRouter from "./routes/meals.js";
 import userMealsRouter from "./routes/userMeals.js";
 
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
   res.send("🍲 MealPrep API is running!");
 });
 
+app.use("/auth", authRouter);
 app.use("/meals", mealsRouter);
 app.use("/userMeals", userMealsRouter);
 

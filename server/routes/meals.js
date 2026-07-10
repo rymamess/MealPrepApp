@@ -1,5 +1,6 @@
 import express from "express";
 import Meal from "../models/Meal.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST new meal
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const meal = new Meal(req.body);
     await meal.save();
