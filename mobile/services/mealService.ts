@@ -1,6 +1,6 @@
 import { Meal } from '@/types/Meal';
 import { API_BASE_URL } from "@/constants/config";
-import { getToken } from "@/services/tokenStorage";
+import { authHeaders } from "@/services/apiClient";
 
 // 🔹 Récupérer tous les repas
 export const fetchMeals = async (): Promise<Meal[]> => {
@@ -18,13 +18,9 @@ export const fetchMealById = async (id: string): Promise<Meal> => {
 
 // 🔹 Créer un repas (utile pour admin ou test)
 export const createMeal = async (meal: Partial<Meal>): Promise<Meal> => {
-  const token = await getToken();
   const res = await fetch(`${API_BASE_URL}/meals`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify(meal),
   });
   if (!res.ok) throw new Error('Erreur lors de la création du repas');

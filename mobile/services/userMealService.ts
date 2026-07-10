@@ -1,11 +1,6 @@
 import { API_BASE_URL } from "@/constants/config";
-import { getToken } from "@/services/tokenStorage";
+import { authHeaders } from "@/services/apiClient";
 import { UserMeal } from "@/types/UserMeal";
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 // 🔹 GET all user meals
 export const getUserMeals = async (): Promise<UserMeal[]> => {

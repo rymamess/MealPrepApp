@@ -24,14 +24,14 @@ function RootNavigator() {
       </Stack.Protected>
 
       <Stack.Protected guard={!!token}>
-        <Stack.Screen name="index" options={{ headerShown: false, title: 'Recettes' }} />
-        <Stack.Screen name="meals/index" options={{ title: 'Toutes les recettes' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Détails de la recette' }} />
         <Stack.Screen name="userMeals/index" options={{ title: 'Mes recettes' }} />
         <Stack.Screen name="userMeals/[id]" options={{ title: 'Détails de ma recette' }} />
         <Stack.Screen name="userMeals/new" options={{ title: 'Nouvelle recette' }} />
         <Stack.Screen name="userMeals/edit/[id]" options={{ title: 'Modifier la recette' }} />
-        <Stack.Screen name="profile" options={{ title: 'Profil' }} />
+        <Stack.Screen name="planning/pick-recipe" options={{ presentation: 'modal', title: 'Choisir une recette' }} />
+        <Stack.Screen name="planning/configure-entry" options={{ presentation: 'modal', title: 'Planifier la recette' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack.Protected>
     </Stack>
