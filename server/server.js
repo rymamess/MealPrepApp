@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import authRouter from "./routes/auth.js";
+import ingredientsRouter from "./routes/ingredients.js";
 import mealsRouter from "./routes/meals.js";
 import mealPlanRouter from "./routes/mealPlan.js";
 import userMealsRouter from "./routes/userMeals.js";
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/ingredients", ingredientsRouter);
 app.use("/meals", mealsRouter);
 app.use("/mealPlan", mealPlanRouter);
 app.use("/userMeals", userMealsRouter);

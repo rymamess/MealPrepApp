@@ -11,13 +11,16 @@ import {
 } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
-import { Picker } from '@react-native-picker/picker';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { IngredientPickerModal } from '@/components/IngredientPickerModal';
+import { SelectField } from '@/components/SelectField';
+import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ingredient, Unit, UNITS } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
-import { getRelativeLuminance } from '@/utils/color';
+import { getContrastTextColor, getRelativeLuminance } from '@/utils/color';
 
 type Props = {
   meal: Partial<UserMeal>;
@@ -45,6 +48,10 @@ const difficulties: SegmentOption<UserMeal['difficulty']>[] = [
   { label: 'Expert', value: 'Hard' },
 ];
 
+const SPICE_CATEGORIES: IngredientCategory[] = ['Spices'];
+const INGREDIENT_ONLY_CATEGORIES: IngredientCategory[] = INGREDIENT_CATEGORIES.filter((c) => c !== 'Spices');
+const UNIT_OPTIONS: SegmentOption<Unit>[] = UNITS.map((unit) => ({ label: unit, value: unit }));
+
 const visibilityOptions: SegmentOption<'private' | 'group'>[] = [
   { label: 'Privé', value: 'private' },
   { label: 'Groupe', value: 'group' },
@@ -66,6 +73,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
   const ingredients = useMemo(() => meal.ingredients ?? [], [meal.ingredients]);
   const spices = useMemo(() => meal.spices ?? [], [meal.spices]);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  const [pickerTarget, setPickerTarget] = useState<{ listKey: 'ingredients' | 'spices'; index: number } | null>(null);
 
   const activeStep = steps[activeStepIndex];
   const isLastStep = activeStepIndex === steps.length - 1;
@@ -91,6 +99,15 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
     const list = listKey === 'ingredients' ? ingredients : spices;
     const updated = list.filter((_, idx) => idx !== index);
     onChange(listKey, updated);
+  };
+
+  const handlePickIngredient = (name: string, category: IngredientCategory) => {
+    if (!pickerTarget) return;
+    const { listKey, index } = pickerTarget;
+    const list = listKey === 'ingredients' ? ingredients : spices;
+    const updated = list.map((item, idx) => (idx === index ? { ...item, name, category } : item));
+    onChange(listKey, updated);
+    setPickerTarget(null);
   };
 
   const handleStepPress = (index: number) => {
@@ -215,6 +232,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
               onAdd={() => handleAddItem('ingredients')}
               onRemove={(index) => handleRemoveItem('ingredients', index)}
               theme={theme}
+              onOpenPicker={(index) => setPickerTarget({ listKey: 'ingredients', index })}
             />
 
             <EditableList
@@ -226,6 +244,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
               onAdd={() => handleAddItem('spices')}
               onRemove={(index) => handleRemoveItem('spices', index)}
               theme={theme}
+              onOpenPicker={(index) => setPickerTarget({ listKey: 'spices', index })}
             />
           </View>
         );
@@ -233,6 +252,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
   };
 
   return (
+    <>
     <ScrollView
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
@@ -286,6 +306,14 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
         </Pressable>
       </View>
     </ScrollView>
+
+    <IngredientPickerModal
+      visible={pickerTarget !== null}
+      onClose={() => setPickerTarget(null)}
+      onSelect={handlePickIngredient}
+      allowedCategories={pickerTarget?.listKey === 'spices' ? SPICE_CATEGORIES : INGREDIENT_ONLY_CATEGORIES}
+    />
+    </>
   );
 };
 
@@ -490,6 +518,36 @@ const InputField: React.FC<InputFieldProps> = ({
   );
 };
 
+type IngredientNameFieldProps = {
+  name: string;
+  category?: IngredientCategory;
+  onPress: () => void;
+  theme: ThemeColors;
+};
+
+const IngredientNameField: React.FC<IngredientNameFieldProps> = ({ name, category, onPress, theme }) => {
+  const meta = category ? getCategoryMeta(category) : null;
+
+  return (
+    <Pressable
+      style={[
+        styles.ingredientNameField,
+        { borderColor: meta ? meta.color : theme.border, backgroundColor: meta ? `${meta.color}22` : 'transparent' },
+      ]}
+      onPress={onPress}
+    >
+      {meta ? (
+        <View style={[styles.ingredientIconBadge, { backgroundColor: meta.color }]}>
+          <MaterialCommunityIcons name={meta.icon as any} size={14} color={getContrastTextColor(meta.color)} />
+        </View>
+      ) : null}
+      <Text style={[styles.ingredientNameText, { color: name ? theme.text : `${theme.text}80` }]} numberOfLines={1}>
+        {name || 'Choisir un ingrédient'}
+      </Text>
+    </Pressable>
+  );
+};
+
 type EditableListProps = {
   title: string;
   emptyHint: string;
@@ -499,6 +557,7 @@ type EditableListProps = {
   onAdd: () => void;
   onRemove: (index: number) => void;
   theme: ThemeColors;
+  onOpenPicker?: (index: number) => void;
 };
 
 const EditableList: React.FC<EditableListProps> = ({
@@ -510,6 +569,7 @@ const EditableList: React.FC<EditableListProps> = ({
   onAdd,
   onRemove,
   theme,
+  onOpenPicker,
 }) => {
   return (
     <View style={styles.listSection}>
@@ -522,13 +582,22 @@ const EditableList: React.FC<EditableListProps> = ({
       ) : null}
       {items.map((item, index) => (
         <View key={`${title}-${index}`} style={[styles.listItem, { borderColor: theme.border }]}>
-          <TextInput
-            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
-            placeholder="Nom"
-            placeholderTextColor={`${theme.text}55`}
-            value={item.name}
-            onChangeText={(text) => onItemChange(index, 'name', text)}
-          />
+          {onOpenPicker ? (
+            <IngredientNameField
+              name={item.name}
+              category={item.category}
+              onPress={() => onOpenPicker(index)}
+              theme={theme}
+            />
+          ) : (
+            <TextInput
+              style={[styles.input, { borderColor: theme.border, color: theme.text }]}
+              placeholder="Nom"
+              placeholderTextColor={`${theme.text}55`}
+              value={item.name}
+              onChangeText={(text) => onItemChange(index, 'name', text)}
+            />
+          )}
           <View style={styles.listRow}>
             <TextInput
               style={[styles.input, styles.quantityInput, { borderColor: theme.border, color: theme.text }]}
@@ -541,17 +610,8 @@ const EditableList: React.FC<EditableListProps> = ({
               }}
               keyboardType="decimal-pad"
             />
-            <View style={[styles.unitPicker, { borderColor: theme.border }]}>
-              <Picker
-                selectedValue={item.unit}
-                onValueChange={(value) => onItemChange(index, 'unit', value)}
-                style={{ color: theme.text }}
-                dropdownIconColor={theme.text}
-              >
-                {UNITS.map((unit) => (
-                  <Picker.Item key={unit} label={unit} value={unit} />
-                ))}
-              </Picker>
+            <View style={styles.unitPicker}>
+              <SelectField value={item.unit} options={UNIT_OPTIONS} onChange={(unit) => onItemChange(index, 'unit', unit)} />
             </View>
             <Pressable style={[styles.removeChip, { borderColor: theme.border }]} onPress={() => onRemove(index)}>
               <Text style={[styles.removeChipLabel, { color: theme.text }]}>Retirer</Text>
@@ -704,6 +764,26 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
+  ingredientNameField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  ingredientIconBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ingredientNameText: {
+    fontSize: 15,
+    flex: 1,
+  },
   multiline: {
     minHeight: 130,
   },
@@ -743,9 +823,6 @@ const styles = StyleSheet.create({
   },
   unitPicker: {
     flex: 1.4,
-    borderWidth: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
   },
   removeChip: {
     paddingHorizontal: 12,

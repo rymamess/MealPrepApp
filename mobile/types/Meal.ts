@@ -1,3 +1,5 @@
+import { IngredientCategory } from '@/constants/ingredientCategories';
+
 export const UNITS = ['g', 'kg', 'ml', 'l', 'unité', 'c. à soupe', 'c. à café', 'pincée', 'tasse', 'au goût'] as const;
 
 export type Unit = (typeof UNITS)[number];
@@ -6,6 +8,7 @@ export type Ingredient = {
   name: string;
   quantity: number;
   unit: Unit;
+  category?: IngredientCategory;
 };
 
 export type Spice = Ingredient;
