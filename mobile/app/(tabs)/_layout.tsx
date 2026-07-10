@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
+import { PlanningPeriodProvider } from '@/contexts/PlanningPeriodContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const tabIcon = (emoji: string) => ({ focused }: { focused: boolean }) => (
@@ -14,18 +15,20 @@ export default function TabsLayout() {
   const theme = Colors[colorScheme ?? 'light'];
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: theme.tint,
-        tabBarInactiveTintColor: `${theme.text}88`,
-        tabBarStyle: { backgroundColor: theme.card, borderTopColor: theme.border },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Recettes', tabBarIcon: tabIcon('🍽️') }} />
-      <Tabs.Screen name="planning" options={{ title: 'Planning', tabBarIcon: tabIcon('🗓️') }} />
-      <Tabs.Screen name="shopping-list" options={{ title: 'Courses', tabBarIcon: tabIcon('🛒') }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('👤') }} />
-    </Tabs>
+    <PlanningPeriodProvider>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: theme.tint,
+          tabBarInactiveTintColor: `${theme.text}88`,
+          tabBarStyle: { backgroundColor: theme.card, borderTopColor: theme.border },
+        }}
+      >
+        <Tabs.Screen name="index" options={{ title: 'Recettes', tabBarIcon: tabIcon('🍽️') }} />
+        <Tabs.Screen name="planning" options={{ title: 'Planning', tabBarIcon: tabIcon('🗓️') }} />
+        <Tabs.Screen name="shopping-list" options={{ title: 'Courses', tabBarIcon: tabIcon('🛒') }} />
+        <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('👤') }} />
+      </Tabs>
+    </PlanningPeriodProvider>
   );
 }

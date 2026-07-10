@@ -35,7 +35,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView safeTop style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.heading, { color: theme.text }]}>Bon retour</Text>
         <Text style={[styles.caption, { color: `${theme.text}99` }]}>Connecte-toi pour retrouver tes recettes.</Text>

@@ -1,16 +1,17 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 
-import { DateField } from '@/components/DateField';
+import { PeriodPicker } from '@/components/PeriodPicker';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { usePlanningPeriod } from '@/contexts/PlanningPeriodContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useMealCollection } from '@/hooks/useMealCollection';
 import { deleteMealPlanEntry, fetchMealPlan } from '@/services/mealPlanService';
 import { MealPlanEntry, MealType } from '@/types/MealPlan';
-import { addDays, formatDayLabel, formatISODate, parseISODate } from '@/utils/week';
+import { formatDayLabel, parseISODate } from '@/utils/week';
 
 const MEAL_TYPES: { value: MealType; label: string }[] = [
   { value: 'Breakfast', label: 'Déjeuner' },
@@ -24,8 +25,7 @@ export default function PlanningScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const [periodStart, setPeriodStart] = useState(() => formatISODate(new Date()));
-  const [periodEnd, setPeriodEnd] = useState(() => formatISODate(addDays(new Date(), 6)));
+  const { periodStart, periodEnd, setPeriodStart, setPeriodEnd } = usePlanningPeriod();
 
   const fetcher = useCallback(() => fetchMealPlan(periodStart, periodEnd), [periodStart, periodEnd]);
   const { data, loading, error, refresh, retry } = useMealCollection<MealPlanEntry>(fetcher);
@@ -70,19 +70,6 @@ export default function PlanningScreen() {
     ]);
   };
 
-  // 'YYYY-MM-DD' se compare lexicographiquement comme des dates : pas besoin de parser.
-  const handlePeriodStartChange = (value: string | null) => {
-    if (!value) return;
-    setPeriodStart(value);
-    if (value > periodEnd) setPeriodEnd(value);
-  };
-
-  const handlePeriodEndChange = (value: string | null) => {
-    if (!value) return;
-    setPeriodEnd(value);
-    if (value < periodStart) setPeriodStart(value);
-  };
-
   const handleEdit = (entry: MealPlanEntry) => {
     router.push({
       pathname: '/planning/configure-entry',
@@ -103,15 +90,13 @@ export default function PlanningScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.periodRow}>
-        <View style={styles.periodField}>
-          <DateField label="Du" value={periodStart} onChange={handlePeriodStartChange} />
-        </View>
-        <View style={styles.periodField}>
-          <DateField label="Au" value={periodEnd} onChange={handlePeriodEndChange} />
-        </View>
-      </View>
+    <ThemedView safeTop style={styles.container}>
+      <PeriodPicker
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        onChangeStart={setPeriodStart}
+        onChangeEnd={setPeriodEnd}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color={theme.tint} style={styles.feedback} />
@@ -175,16 +160,6 @@ export default function PlanningScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  periodRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  periodField: {
     flex: 1,
   },
   feedback: {

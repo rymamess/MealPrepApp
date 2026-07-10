@@ -1,27 +1,9 @@
-const MONTH_NAMES = [
-  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
-];
-
 const DAY_NAMES_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 export function addDays(date: Date, amount: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + amount);
   return result;
-}
-
-export function addWeeks(date: Date, amount: number): Date {
-  return addDays(date, amount * 7);
-}
-
-// Semaine commençant le lundi (convention française/québécoise).
-export function getStartOfWeek(date: Date): Date {
-  const day = date.getDay(); // 0 = dimanche .. 6 = samedi
-  const diff = day === 0 ? -6 : 1 - day;
-  const start = addDays(date, diff);
-  start.setHours(0, 0, 0, 0);
-  return start;
 }
 
 // Construit 'YYYY-MM-DD' à partir des composantes locales (pas toISOString(),
@@ -43,15 +25,4 @@ export function parseISODate(value: string): Date {
 
 export function formatDayLabel(date: Date): string {
   return DAY_NAMES_SHORT[date.getDay()];
-}
-
-export function formatWeekRangeLabel(weekStart: Date): string {
-  const weekEnd = addDays(weekStart, 6);
-  const startDay = weekStart.getDate();
-  const endDay = weekEnd.getDate();
-
-  if (weekStart.getMonth() === weekEnd.getMonth()) {
-    return `${startDay} – ${endDay} ${MONTH_NAMES[weekStart.getMonth()]}`;
-  }
-  return `${startDay} ${MONTH_NAMES[weekStart.getMonth()]} – ${endDay} ${MONTH_NAMES[weekEnd.getMonth()]}`;
 }

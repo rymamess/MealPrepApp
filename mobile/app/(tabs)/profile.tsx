@@ -19,7 +19,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView safeTop style={styles.container}>
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <Text style={[styles.label, { color: `${theme.text}99` }]}>Connecté en tant que</Text>
         <Text style={[styles.email, { color: theme.text }]}>{user?.email}</Text>

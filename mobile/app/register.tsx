@@ -48,7 +48,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView safeTop style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.heading, { color: theme.text }]}>Créer un compte</Text>
         <Text style={[styles.caption, { color: `${theme.text}99` }]}>Rejoins MealPrep pour organiser tes recettes.</Text>

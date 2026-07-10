@@ -110,7 +110,7 @@ export default function HomeScreen() {
       );
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView safeTop style={styles.container}>
       <View style={[styles.topBar, { borderColor: `${theme.border}66`, backgroundColor: theme.card }]}>
         <View style={styles.topBarCopy}>
           <Text style={[styles.topBarLabel, { color: theme.text }]}>Recettes</Text>

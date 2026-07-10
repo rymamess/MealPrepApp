@@ -2,21 +2,22 @@ import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { PeriodPicker } from '@/components/PeriodPicker';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { usePlanningPeriod } from '@/contexts/PlanningPeriodContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { fetchShoppingList } from '@/services/mealPlanService';
 import { ShoppingList, ShoppingListItem } from '@/types/MealPlan';
 import { getContrastTextColor } from '@/utils/color';
-import { addDays, addWeeks, formatISODate, formatWeekRangeLabel, getStartOfWeek } from '@/utils/week';
 
 // Les cases cochées sont un état local uniquement (non persisté côté serveur) :
-// elles se réinitialisent à chaque rafraîchissement ou changement de semaine.
+// elles se réinitialisent à chaque rafraîchissement ou changement de période.
 export default function ShoppingListScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
 
-  const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
+  const { periodStart, periodEnd, setPeriodStart, setPeriodEnd } = usePlanningPeriod();
   const [data, setData] = useState<ShoppingList>({ ingredients: [], spices: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export default function ShoppingListScreen() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchShoppingList(formatISODate(weekStart), formatISODate(addDays(weekStart, 6)));
+      const result = await fetchShoppingList(periodStart, periodEnd);
       setData(result);
       setChecked(new Set());
     } catch (err) {
@@ -34,7 +35,7 @@ export default function ShoppingListScreen() {
     } finally {
       setLoading(false);
     }
-  }, [weekStart]);
+  }, [periodStart, periodEnd]);
 
   useFocusEffect(
     useCallback(() => {
@@ -57,7 +58,7 @@ export default function ShoppingListScreen() {
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
       {items.length === 0 ? (
-        <Text style={[styles.emptyText, { color: `${theme.text}88` }]}>Rien pour cette semaine.</Text>
+        <Text style={[styles.emptyText, { color: `${theme.text}88` }]}>Rien pour cette période.</Text>
       ) : (
         items.map((item, index) => {
           const key = `${prefix}-${index}-${item.name}`;
@@ -88,16 +89,13 @@ export default function ShoppingListScreen() {
   );
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.weekNav}>
-        <Pressable style={[styles.navButton, { borderColor: theme.border }]} onPress={() => setWeekStart((prev) => addWeeks(prev, -1))} hitSlop={8}>
-          <Text style={[styles.navButtonLabel, { color: theme.text }]}>‹</Text>
-        </Pressable>
-        <Text style={[styles.weekLabel, { color: theme.text }]}>{formatWeekRangeLabel(weekStart)}</Text>
-        <Pressable style={[styles.navButton, { borderColor: theme.border }]} onPress={() => setWeekStart((prev) => addWeeks(prev, 1))} hitSlop={8}>
-          <Text style={[styles.navButtonLabel, { color: theme.text }]}>›</Text>
-        </Pressable>
-      </View>
+    <ThemedView safeTop style={styles.container}>
+      <PeriodPicker
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        onChangeStart={setPeriodStart}
+        onChangeEnd={setPeriodEnd}
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color={theme.tint} style={styles.feedback} />
@@ -121,31 +119,6 @@ export default function ShoppingListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  weekNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  navButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navButtonLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  weekLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    textTransform: 'capitalize',
   },
   feedback: {
     flex: 1,
