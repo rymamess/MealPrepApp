@@ -24,7 +24,7 @@ function RootNavigator() {
       </Stack.Protected>
 
       <Stack.Protected guard={!!token}>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false, title: 'Recettes' }} />
         <Stack.Screen name="meals/index" options={{ title: 'Toutes les recettes' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Détails de la recette' }} />
         <Stack.Screen name="userMeals/index" options={{ title: 'Mes recettes' }} />
