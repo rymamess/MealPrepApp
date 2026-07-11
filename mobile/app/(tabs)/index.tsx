@@ -39,7 +39,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
-  const [segment, setSegment] = useState<SegmentKey>('discover');
+  const [segment, setSegment] = useState<SegmentKey>('personal');
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);

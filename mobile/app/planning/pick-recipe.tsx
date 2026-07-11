@@ -25,7 +25,7 @@ export default function PickRecipeScreen() {
     periodEnd: string;
   }>();
 
-  const [segment, setSegment] = useState<SegmentKey>('discover');
+  const [segment, setSegment] = useState<SegmentKey>('personal');
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
