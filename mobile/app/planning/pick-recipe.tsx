@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { MealCard } from '@/components/MealCard';
 import { MealGrid } from '@/components/MealGrid';
+import { SearchInput } from '@/components/SearchInput';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -26,12 +27,19 @@ export default function PickRecipeScreen() {
   }>();
 
   const [segment, setSegment] = useState<SegmentKey>('personal');
+  const [search, setSearch] = useState('');
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
 
   const activeCollection = segment === 'discover' ? publicMeals : personalMeals;
   const contrastColor = getContrastTextColor(theme.tint);
+
+  const filteredData = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return activeCollection.data;
+    return activeCollection.data.filter((meal) => meal.name.toLowerCase().includes(query));
+  }, [activeCollection.data, search]);
 
   const handlePick = (mealId: string) => {
     router.push({
@@ -63,8 +71,12 @@ export default function PickRecipeScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.searchWrapper}>
+        <SearchInput value={search} onChangeText={setSearch} placeholder="Rechercher une recette…" />
+      </View>
+
       <MealGrid
-        data={activeCollection.data}
+        data={filteredData}
         loading={activeCollection.loading}
         error={activeCollection.error}
         keyExtractor={(item) => item._id}
@@ -74,7 +86,11 @@ export default function PickRecipeScreen() {
         refreshing={activeCollection.refreshing}
         onRefresh={activeCollection.refresh}
         onRetry={activeCollection.retry}
-        emptyState={<Text style={{ color: theme.text, textAlign: 'center' }}>Aucune recette disponible.</Text>}
+        emptyState={
+          <Text style={{ color: theme.text, textAlign: 'center' }}>
+            {search.trim() ? `Aucun résultat pour « ${search.trim()} »` : 'Aucune recette disponible.'}
+          </Text>
+        }
       />
     </ThemedView>
   );
@@ -103,5 +119,9 @@ const styles = StyleSheet.create({
   segmentLabel: {
     fontSize: 14,
     fontWeight: '700',
+  },
+  searchWrapper: {
+    marginHorizontal: 24,
+    marginBottom: 12,
   },
 });

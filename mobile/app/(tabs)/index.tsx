@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { MealCard } from '@/components/MealCard';
 import { MealGrid } from '@/components/MealGrid';
+import { SearchInput } from '@/components/SearchInput';
 import { ThemedView } from '@/components/themed-view';
 import { UserMealActions } from '@/components/UserMealActions';
 import { Colors } from '@/constants/theme';
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const [segment, setSegment] = useState<SegmentKey>('personal');
+  const [search, setSearch] = useState('');
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
@@ -47,8 +49,11 @@ export default function HomeScreen() {
   const activeCollection = segment === 'discover' ? publicMeals : personalMeals;
 
   const activeData = useMemo(() => {
-    return segment === 'discover' ? publicMeals.data : (personalMeals.data as Meal[]);
-  }, [segment, publicMeals.data, personalMeals.data]);
+    const data = segment === 'discover' ? publicMeals.data : (personalMeals.data as Meal[]);
+    const query = search.trim().toLowerCase();
+    if (!query) return data;
+    return data.filter((meal) => meal.name.toLowerCase().includes(query));
+  }, [segment, publicMeals.data, personalMeals.data, search]);
 
   const handleCreate = () => router.push('/userMeals/new');
 
@@ -95,7 +100,14 @@ export default function HomeScreen() {
     return <MealCard meal={meal} />;
   };
 
-  const emptyState = segment === 'discover'
+  const emptyState = search.trim()
+    ? (
+        <View style={styles.emptyState}>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucun résultat pour « {search.trim()} »</Text>
+          <Text style={[styles.emptyText, { color: theme.text }]}>Essaie un autre terme de recherche.</Text>
+        </View>
+      )
+    : segment === 'discover'
     ? (
         <View style={styles.emptyState}>
           <Text style={[styles.emptyTitle, { color: theme.text }]}>Aucune recette à explorer pour le moment.</Text>
@@ -150,6 +162,10 @@ export default function HomeScreen() {
             </Pressable>
           );
         })}
+      </View>
+
+      <View style={styles.searchWrapper}>
+        <SearchInput value={search} onChangeText={setSearch} placeholder="Rechercher une recette…" />
       </View>
 
       <MealGrid<Meal>
@@ -240,6 +256,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     opacity: 0.8,
+  },
+  searchWrapper: {
+    marginHorizontal: 24,
+    marginBottom: 12,
   },
   emptyState: {
     alignItems: 'center',

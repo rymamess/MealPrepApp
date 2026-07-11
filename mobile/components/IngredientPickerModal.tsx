@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { SearchInput } from '@/components/SearchInput';
 import { ThemedView } from '@/components/themed-view';
 import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors } from '@/constants/theme';
@@ -147,13 +148,11 @@ export function IngredientPickerModal({ visible, onClose, onSelect, defaultCateg
           </Pressable>
         </View>
 
-        <TextInput
-          style={[styles.searchInput, { borderColor: theme.border, color: theme.text }]}
+        <SearchInput
+          containerStyle={styles.searchInput}
           placeholder="Rechercher un ingrédient…"
-          placeholderTextColor={`${theme.text}55`}
           value={search}
           onChangeText={setSearch}
-          autoCapitalize="none"
         />
 
         {loading ? (
