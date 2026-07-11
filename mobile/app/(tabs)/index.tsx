@@ -20,20 +20,11 @@ type SegmentKey = 'discover' | 'personal';
 type Segment = {
   key: SegmentKey;
   label: string;
-  description: string;
 };
 
 const SEGMENTS: Segment[] = [
-  {
-    key: 'discover',
-    label: 'Explorer',
-    description: 'Découvrez les recettes inspirantes de la communauté.',
-  },
-  {
-    key: 'personal',
-    label: 'Mes recettes',
-    description: 'Retrouvez vos propres créations et mettez-les à jour.',
-  },
+  { key: 'discover', label: 'Explorer' },
+  { key: 'personal', label: 'Mes recettes' },
 ];
 
 export default function HomeScreen() {
@@ -123,11 +114,29 @@ export default function HomeScreen() {
 
   return (
     <ThemedView safeTop style={styles.container}>
-      <View style={[styles.topBar, { borderColor: `${theme.border}66`, backgroundColor: theme.card }]}>
-        <View style={styles.topBarCopy}>
-          <Text style={[styles.topBarLabel, { color: theme.text }]}>Recettes</Text>
-          <Text style={[styles.topBarSubtitle, { color: theme.text }]}>Explorez la communauté ou organisez vos propres plats.</Text>
+      <View style={styles.headerRow}>
+        <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          {SEGMENTS.map((item) => {
+            const isActive = segment === item.key;
+            return (
+              <Pressable
+                key={item.key}
+                style={[styles.segmentButton, isActive && { backgroundColor: theme.tint }]}
+                onPress={() => setSegment(item.key)}
+              >
+                <Text
+                  style={[
+                    styles.segmentLabel,
+                    { color: isActive ? (colorScheme === 'dark' ? '#000' : '#fff') : theme.text },
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Ajouter une recette"
@@ -137,31 +146,6 @@ export default function HomeScreen() {
         >
           <Text style={[styles.fabLabel, { color: colorScheme === 'dark' ? '#000' : '#fff' }]}>+</Text>
         </Pressable>
-      </View>
-
-      <View style={[styles.segmentedControl, { borderColor: theme.border, backgroundColor: theme.card }]}>
-        {SEGMENTS.map((item) => {
-          const isActive = segment === item.key;
-          return (
-            <Pressable
-              key={item.key}
-              style={[styles.segmentButton, isActive && { backgroundColor: theme.tint }]}
-              onPress={() => setSegment(item.key)}
-            >
-              <Text
-                style={[
-                  styles.segmentLabel,
-                  { color: isActive ? (colorScheme === 'dark' ? '#000' : '#fff') : theme.text },
-                ]}
-              >
-                {item.label}
-              </Text>
-              <Text style={[styles.segmentDescription, { color: isActive ? (colorScheme === 'dark' ? '#000' : '#fff') : theme.text }]}>
-                {item.description}
-              </Text>
-            </Pressable>
-          );
-        })}
       </View>
 
       <View style={styles.searchWrapper}>
@@ -187,36 +171,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  topBar: {
-    marginHorizontal: 24,
-    marginTop: 24,
-    marginBottom: 16,
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  topBarCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  topBarLabel: {
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
-  topBarSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    opacity: 0.75,
+    marginHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 12,
+    gap: 10,
   },
   fab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -226,36 +192,28 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabLabel: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '600',
-    marginTop: -4,
+    marginTop: -2,
   },
   segmentedControl: {
+    flex: 1,
     flexDirection: 'row',
-    marginHorizontal: 24,
     borderRadius: 20,
     padding: 6,
     borderWidth: StyleSheet.hairlineWidth,
     gap: 6,
-    marginBottom: 12,
   },
   segmentButton: {
     flex: 1,
     borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 12,
     justifyContent: 'center',
-    gap: 4,
   },
   segmentLabel: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  segmentDescription: {
-    fontSize: 12,
-    textAlign: 'center',
-    opacity: 0.8,
   },
   searchWrapper: {
     marginHorizontal: 24,
