@@ -1,6 +1,6 @@
 import { API_BASE_URL } from "@/constants/config";
 import { authHeaders } from "@/services/apiClient";
-import { MealPlanEntry, MealType, PlannableItemType, ShoppingList } from "@/types/MealPlan";
+import { MealPlanEntry, MealType, PlannableItemType, ShoppingListItem } from "@/types/MealPlan";
 
 export const fetchMealPlan = async (start: string, end: string): Promise<MealPlanEntry[]> => {
   const res = await fetch(`${API_BASE_URL}/mealPlan?start=${start}&end=${end}`, {
@@ -10,7 +10,7 @@ export const fetchMealPlan = async (start: string, end: string): Promise<MealPla
   return res.json();
 };
 
-export const fetchShoppingList = async (start: string, end: string): Promise<ShoppingList> => {
+export const fetchShoppingList = async (start: string, end: string): Promise<ShoppingListItem[]> => {
   const res = await fetch(`${API_BASE_URL}/mealPlan/shopping-list?start=${start}&end=${end}`, {
     headers: await authHeaders(),
   });

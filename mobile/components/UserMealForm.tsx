@@ -91,7 +91,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
 
   const handleAddItem = (listKey: 'ingredients' | 'spices') => {
     const list = listKey === 'ingredients' ? ingredients : spices;
-    const defaultUnit: Unit = listKey === 'spices' ? 'pincée' : 'g';
+    const defaultUnit: Unit = listKey === 'spices' ? 'pincée' : 'unité';
     onChange(listKey, [...list, { name: '', quantity: 0, unit: defaultUnit }]);
   };
 

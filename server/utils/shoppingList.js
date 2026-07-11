@@ -1,5 +1,6 @@
 const MASS_UNITS = ['g', 'kg'];
 const VOLUME_UNITS = ['ml', 'l'];
+const DEFAULT_CATEGORY = 'Other';
 
 function scaleFactor(entry, recipe) {
   return entry.servings && recipe?.servings ? entry.servings / recipe.servings : 1;
@@ -13,46 +14,60 @@ function toMl(quantity, unit) {
   return unit === 'l' ? quantity * 1000 : quantity;
 }
 
+function getOrCreateGroup(groups, key, base) {
+  const existing = groups.get(key);
+  if (existing) return existing;
+  groups.set(key, base);
+  return base;
+}
+
+// Agrège une liste plate {name, quantity, unit, category, manualId?} par nom + famille
+// d'unité (masse: g/kg, volume: ml/l, sinon exact). Un item avec `manualId` marque le
+// groupe comme contenant une contribution manuelle (au plus une, les items manuels étant
+// eux-mêmes fusionnés entre eux à la création) ; un groupe peut aussi contenir une
+// contribution "recette". `source`/`id` en sortie reflètent ce mélange :
+// - seulement manuel -> source 'manual', id du document manuel (supprimable)
+// - manuel + recette -> source 'mixed', id du document manuel (le retirer ne supprime
+//   que la contribution manuelle, la part "recette" réapparaît au prochain calcul)
+// - seulement recette -> source 'recipe', pas d'id
 function aggregate(items) {
   const groups = new Map();
 
-  for (const { name, quantity, unit } of items) {
+  for (const { name, quantity, unit, category, manualId } of items) {
     const key = name.trim().toLowerCase();
+    const itemCategory = category || DEFAULT_CATEGORY;
+    const isManual = Boolean(manualId);
 
+    let group;
     if (unit === 'au goût') {
-      const k = `${key}|au goût`;
-      if (!groups.has(k)) groups.set(k, { name: key, quantity: 0, unit: 'au goût' });
-      continue;
+      group = getOrCreateGroup(groups, `${key}|au goût`, { name: key, quantity: 0, unit: 'au goût', category: itemCategory });
+    } else if (MASS_UNITS.includes(unit)) {
+      group = getOrCreateGroup(groups, `${key}|mass`, { name: key, family: 'mass', grams: 0, category: itemCategory });
+      group.grams += toGrams(quantity, unit);
+    } else if (VOLUME_UNITS.includes(unit)) {
+      group = getOrCreateGroup(groups, `${key}|volume`, { name: key, family: 'volume', ml: 0, category: itemCategory });
+      group.ml += toMl(quantity, unit);
+    } else {
+      group = getOrCreateGroup(groups, `${key}|${unit}`, { name: key, quantity: 0, unit, category: itemCategory });
+      group.quantity += quantity;
     }
 
-    if (MASS_UNITS.includes(unit)) {
-      const k = `${key}|mass`;
-      const g = groups.get(k) ?? { name: key, family: 'mass', grams: 0 };
-      g.grams += toGrams(quantity, unit);
-      groups.set(k, g);
-      continue;
-    }
-
-    if (VOLUME_UNITS.includes(unit)) {
-      const k = `${key}|volume`;
-      const g = groups.get(k) ?? { name: key, family: 'volume', ml: 0 };
-      g.ml += toMl(quantity, unit);
-      groups.set(k, g);
-      continue;
-    }
-
-    const k = `${key}|${unit}`;
-    const g = groups.get(k) ?? { name: key, quantity: 0, unit };
-    g.quantity += quantity;
-    groups.set(k, g);
+    group.hasRecipe = group.hasRecipe || !isManual;
+    if (isManual) group.manualId = manualId;
   }
 
   return [...groups.values()].map((g) => {
+    const source = g.manualId ? (g.hasRecipe ? 'mixed' : 'manual') : 'recipe';
+    const id = g.manualId;
+
     if (g.family === 'mass') {
       return {
         name: g.name,
         quantity: g.grams >= 1000 ? +(g.grams / 1000).toFixed(2) : g.grams,
         unit: g.grams >= 1000 ? 'kg' : 'g',
+        category: g.category,
+        source,
+        id,
       };
     }
     if (g.family === 'volume') {
@@ -60,29 +75,44 @@ function aggregate(items) {
         name: g.name,
         quantity: g.ml >= 1000 ? +(g.ml / 1000).toFixed(2) : g.ml,
         unit: g.ml >= 1000 ? 'l' : 'ml',
+        category: g.category,
+        source,
+        id,
       };
     }
-    return { name: g.name, quantity: g.quantity, unit: g.unit };
+    return { name: g.name, quantity: g.quantity, unit: g.unit, category: g.category, source, id };
   });
 }
 
-export function computeShoppingList(entries) {
-  const ingredientItems = [];
-  const spiceItems = [];
+// Retourne une liste plate d'items {name, category, quantity, unit, source, id?},
+// fusionnant les ingrédients/épices des recettes planifiées et les items ajoutés
+// manuellement dès que le nom et l'unité correspondent.
+export function computeShoppingList(entries, manualItems = []) {
+  const flatItems = [];
 
   for (const entry of entries) {
-    const recipe = entry.itemId; // populated doc; may be null if the reference is dangling
+    const recipe = entry.itemId; // doc populé ; peut être null si la référence est orpheline
     if (!recipe) continue;
 
     const scale = scaleFactor(entry, recipe);
 
     for (const ing of recipe.ingredients ?? []) {
-      ingredientItems.push({ name: ing.name, quantity: ing.quantity * scale, unit: ing.unit });
+      flatItems.push({ name: ing.name, quantity: ing.quantity * scale, unit: ing.unit, category: ing.category });
     }
     for (const sp of recipe.spices ?? []) {
-      spiceItems.push({ name: sp.name, quantity: sp.quantity * scale, unit: sp.unit });
+      flatItems.push({ name: sp.name, quantity: sp.quantity * scale, unit: sp.unit, category: sp.category });
     }
   }
 
-  return { ingredients: aggregate(ingredientItems), spices: aggregate(spiceItems) };
+  for (const item of manualItems) {
+    flatItems.push({
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      category: item.category,
+      manualId: item._id.toString(),
+    });
+  }
+
+  return aggregate(flatItems);
 }

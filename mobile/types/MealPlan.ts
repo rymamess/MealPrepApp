@@ -1,3 +1,4 @@
+import { IngredientCategory } from '@/constants/ingredientCategories';
 import { Meal } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
 
@@ -18,12 +19,15 @@ export type MealPlanEntry = {
 };
 
 export type ShoppingListItem = {
+  // Présent quand une contribution manuelle existe dans la ligne ('manual' ou 'mixed') —
+  // permet de la retirer (voir source ci-dessous).
+  id?: string;
   name: string;
+  category: IngredientCategory;
   quantity: number;
   unit: string;
-};
-
-export type ShoppingList = {
-  ingredients: ShoppingListItem[];
-  spices: ShoppingListItem[];
+  // 'recipe': vient uniquement des recettes planifiées.
+  // 'manual': vient uniquement d'ajouts manuels.
+  // 'mixed': recette + manuel fusionnés (retirer ne supprime que la part manuelle).
+  source: 'recipe' | 'manual' | 'mixed';
 };
