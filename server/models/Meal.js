@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { INGREDIENT_CATEGORIES } from "./Ingredient.js";
 
 export const UNITS = ['g', 'kg', 'ml', 'l', 'unité', 'c. à soupe', 'c. à café', 'pincée', 'tasse', 'au goût'];
+export const COOK_MODES = ['Plaque', 'Four', 'Airfryer', 'Micro-ondes', 'Grill', 'Aucune'];
 
 export const IngredientSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -16,6 +17,8 @@ export const MealBaseSchema = new mongoose.Schema({
   category: { type: String, enum: ['Breakfast','Snack','Lunch','Dinner','Dessert'], required: true },
   prepTime: { type: Number },
   cookTime: { type: Number },
+  cookMode: { type: String, enum: COOK_MODES, default: 'Plaque' },
+  cookTemp: { type: Number }, // en °C, optionnel
   difficulty: { type: String, enum: ['Easy','Medium','Hard'] },
   servings: { type: Number },
   ingredients: [IngredientSchema],

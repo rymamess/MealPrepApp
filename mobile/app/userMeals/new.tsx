@@ -13,6 +13,7 @@ export default function NewUserMealPage() {
     category: "Lunch",
     prepTime: "0",
     cookTime: "0",
+    cookMode: "Plaque",
     difficulty: "Easy",
     servings: 1,
     ingredients: [],

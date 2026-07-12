@@ -18,7 +18,7 @@ import { SelectField } from '@/components/SelectField';
 import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Ingredient, Unit, UNITS } from '@/types/Meal';
+import { CookMode, COOK_MODES, Ingredient, Unit, UNITS } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
 import { getContrastTextColor, getRelativeLuminance } from '@/utils/color';
 
@@ -47,6 +47,20 @@ const difficulties: SegmentOption<UserMeal['difficulty']>[] = [
   { label: 'Intermédiaire', value: 'Medium' },
   { label: 'Expert', value: 'Hard' },
 ];
+
+const cookModeLabels: Record<CookMode, string> = {
+  Plaque: 'Plaque',
+  Four: 'Four',
+  Airfryer: 'Airfryer',
+  'Micro-ondes': 'Micro-ondes',
+  Grill: 'Grill',
+  Aucune: 'Aucune cuisson',
+};
+
+const cookModeOptions: SegmentOption<CookMode>[] = COOK_MODES.map((mode) => ({
+  label: cookModeLabels[mode],
+  value: mode,
+}));
 
 const SPICE_CATEGORIES: IngredientCategory[] = ['Spices'];
 const INGREDIENT_ONLY_CATEGORIES: IngredientCategory[] = INGREDIENT_CATEGORIES.filter((c) => c !== 'Spices');
@@ -189,6 +203,25 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                 placeholder="30"
                 value={meal.cookTime ?? ''}
                 onChangeText={(text) => onChange('cookTime', text.replace(/[^0-9]/g, ''))}
+                theme={theme}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={styles.segmentBlock}>
+                <Text style={[styles.label, { color: theme.text }]}>Mode de cuisson</Text>
+                <SelectField
+                  value={(meal.cookMode as CookMode) ?? 'Plaque'}
+                  options={cookModeOptions}
+                  onChange={(value) => onChange('cookMode', value)}
+                />
+              </View>
+              <InputField
+                label="Température (°C)"
+                placeholder="Optionnel"
+                value={meal.cookTemp ?? ''}
+                onChangeText={(text) => onChange('cookTemp', text.replace(/[^0-9]/g, ''))}
                 theme={theme}
                 keyboardType="number-pad"
               />

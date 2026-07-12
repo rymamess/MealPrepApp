@@ -13,12 +13,18 @@ export type Ingredient = {
 
 export type Spice = Ingredient;
 
+export const COOK_MODES = ['Plaque', 'Four', 'Airfryer', 'Micro-ondes', 'Grill', 'Aucune'] as const;
+
+export type CookMode = (typeof COOK_MODES)[number];
+
 export type Meal = {
   _id: string;
   name: string;
   photo: string; // URL ou require('@/assets/xxx.png')
   prepTime: string;
   cookTime: string;
+  cookMode: CookMode;
+  cookTemp?: string; // en °C, optionnel
   difficulty: 'Easy' | 'Medium' | 'Hard';
   servings: number;
   category: 'Breakfast' | 'Snack' | 'Lunch' | 'Dinner' | 'Dessert';

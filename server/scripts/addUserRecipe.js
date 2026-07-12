@@ -4,7 +4,7 @@ import fs from "fs";
 import User from "../models/User.js";
 import UserMeal from "../models/UserMeal.js";
 import Ingredient, { INGREDIENT_CATEGORIES } from "../models/Ingredient.js";
-import { UNITS } from "../models/Meal.js";
+import { UNITS, COOK_MODES } from "../models/Meal.js";
 
 dotenv.config();
 
@@ -53,6 +53,7 @@ async function run() {
     if (!recipe.name) errors.push("name manquant");
     if (!MEAL_CATEGORIES.includes(recipe.category)) errors.push(`category invalide: "${recipe.category}"`);
     if (recipe.difficulty && !DIFFICULTIES.includes(recipe.difficulty)) errors.push(`difficulty invalide: "${recipe.difficulty}"`);
+    if (recipe.cookMode && !COOK_MODES.includes(recipe.cookMode)) errors.push(`cookMode invalide: "${recipe.cookMode}"`);
     errors.push(...validateItemList(recipe.ingredients, "ingredients"));
     errors.push(...validateItemList(recipe.spices, "spices"));
 
@@ -95,6 +96,8 @@ async function run() {
       category: recipe.category,
       prepTime: recipe.prepTime,
       cookTime: recipe.cookTime,
+      cookMode: recipe.cookMode,
+      cookTemp: recipe.cookTemp,
       difficulty: recipe.difficulty,
       servings: recipe.servings,
       ingredients: recipe.ingredients || [],

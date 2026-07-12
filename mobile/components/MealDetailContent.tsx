@@ -41,6 +41,14 @@ export const MealDetailContent: React.FC<Props> = ({ meal, loading, error }) => 
         {`Prep: ${meal.prepTime} min | Cook: ${meal.cookTime} min | Difficulty: ${meal.difficulty}`}
       </ThemedText>
 
+      {meal.cookMode && meal.cookMode !== 'Aucune' ? (
+        <ThemedText style={{ color: theme.text }}>
+          {`Mode de cuisson: ${meal.cookMode}${meal.cookTemp ? ` à ${meal.cookTemp}°C` : ''}`}
+        </ThemedText>
+      ) : meal.cookMode === 'Aucune' ? (
+        <ThemedText style={{ color: theme.text }}>Aucune cuisson nécessaire</ThemedText>
+      ) : null}
+
       <ScrollView style={styles.section}>
         <ThemedText type="subtitle" style={[styles.sectionTitle, { color: theme.text }]}>
           Ingredients:
