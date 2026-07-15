@@ -7,19 +7,23 @@ import { IngredientPickerModal } from '@/components/IngredientPickerModal';
 import { PeriodPicker } from '@/components/PeriodPicker';
 import { SelectField } from '@/components/SelectField';
 import { ThemedView } from '@/components/themed-view';
-import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
+import { resolveCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors } from '@/constants/theme';
 import { usePlanningPeriod } from '@/contexts/PlanningPeriodContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { fetchShoppingList } from '@/services/mealPlanService';
+import { fetchUserCategories } from '@/services/preferencesService';
 import { createManualShoppingItem, deleteManualShoppingItem } from '@/services/shoppingListItemService';
 import { ShoppingListItem } from '@/types/MealPlan';
 import { Unit, UNITS } from '@/types/Meal';
+import { UserCategory } from '@/types/Preferences';
 import { getContrastTextColor } from '@/utils/color';
 
 const UNIT_OPTIONS = UNITS.map((unit) => ({ label: unit, value: unit }));
+const UNASSIGNED_STORE = 'Non classé';
 
 type PendingIngredient = { name: string; category: IngredientCategory };
+type ViewMode = 'category' | 'store';
 
 // Les cases cochées sont un état local uniquement (non persisté côté serveur) :
 // elles se réinitialisent à chaque rafraîchissement ou changement de période.
@@ -30,6 +34,8 @@ export default function ShoppingListScreen() {
 
   const { periodStart, periodEnd, setPeriodStart, setPeriodEnd } = usePlanningPeriod();
   const [items, setItems] = useState<ShoppingListItem[]>([]);
+  const [userCategories, setUserCategories] = useState<UserCategory[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('category');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -43,8 +49,12 @@ export default function ShoppingListScreen() {
     setLoading(true);
     setError(null);
     try {
-      const result = await fetchShoppingList(periodStart, periodEnd);
+      const [result, categories] = await Promise.all([
+        fetchShoppingList(periodStart, periodEnd),
+        fetchUserCategories(),
+      ]);
       setItems(result);
+      setUserCategories(categories);
       setChecked(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -59,12 +69,46 @@ export default function ShoppingListScreen() {
     }, [load])
   );
 
-  const groupedByCategory = useMemo(() => {
-    const groups = new Map<IngredientCategory, ShoppingListItem[]>();
-    for (const category of INGREDIENT_CATEGORIES) groups.set(category, []);
-    for (const item of items) groups.get(item.category)?.push(item);
-    return groups;
-  }, [items]);
+  const allCategories = useMemo(
+    () => [...INGREDIENT_CATEGORIES, ...userCategories.map((c) => c.name)],
+    [userCategories]
+  );
+
+  type Section = { key: string; title: string; color: string; icon: string; items: ShoppingListItem[] };
+
+  const sections = useMemo<Section[]>(() => {
+    if (viewMode === 'store') {
+      const groups = new Map<string, ShoppingListItem[]>();
+      const storeNames = [...new Set(items.map((item) => item.store).filter((s): s is string => !!s))].sort();
+      for (const store of storeNames) groups.set(store, []);
+      groups.set(UNASSIGNED_STORE, []);
+      for (const item of items) groups.get(item.store ?? UNASSIGNED_STORE)?.push(item);
+
+      return [...groups.entries()]
+        .filter(([, storeItems]) => storeItems.length > 0)
+        .map(([store, storeItems]) => ({
+          key: store,
+          title: store,
+          color: store === UNASSIGNED_STORE ? `${theme.text}55` : theme.tint,
+          icon: 'store-outline',
+          items: storeItems,
+        }));
+    }
+
+    const groups = new Map<string, ShoppingListItem[]>();
+    for (const category of allCategories) groups.set(category, []);
+    for (const item of items) {
+      if (!groups.has(item.category)) groups.set(item.category, []);
+      groups.get(item.category)?.push(item);
+    }
+
+    return [...groups.entries()]
+      .filter(([, categoryItems]) => categoryItems.length > 0)
+      .map(([category, categoryItems]) => {
+        const meta = resolveCategoryMeta(category, userCategories);
+        return { key: category, title: meta.label, color: meta.color, icon: meta.icon, items: categoryItems };
+      });
+  }, [items, viewMode, allCategories, userCategories, theme.text, theme.tint]);
 
   const rowKey = (item: ShoppingListItem) =>
     item.id ? `item-${item.id}` : `recipe-${item.category}-${item.name}-${item.unit}`;
@@ -151,21 +195,34 @@ export default function ShoppingListScreen() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          {INGREDIENT_CATEGORIES.map((category) => {
-            const categoryItems = groupedByCategory.get(category) ?? [];
-            if (categoryItems.length === 0) return null;
-            const meta = getCategoryMeta(category);
+          <View style={[styles.viewModeToggle, { borderColor: theme.border }]}>
+            {(['category', 'store'] as ViewMode[]).map((mode) => {
+              const isActive = viewMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  style={[styles.viewModeChip, isActive && { backgroundColor: theme.tint }]}
+                  onPress={() => setViewMode(mode)}
+                >
+                  <Text style={[styles.viewModeLabel, { color: isActive ? contrastColor : theme.text }]}>
+                    {mode === 'category' ? 'Par catégorie' : 'Par magasin'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
 
+          {sections.map(({ key, title, color, icon, items: sectionItems }) => {
             return (
-              <View key={category} style={styles.section}>
+              <View key={key} style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={[styles.iconBadge, { backgroundColor: meta.color }]}>
-                    <MaterialCommunityIcons name={meta.icon as any} size={16} color={getContrastTextColor(meta.color)} />
+                  <View style={[styles.iconBadge, { backgroundColor: color }]}>
+                    <MaterialCommunityIcons name={icon as any} size={16} color={getContrastTextColor(color)} />
                   </View>
-                  <Text style={[styles.sectionTitle, { color: theme.text }]}>{meta.label}</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
                 </View>
 
-                {categoryItems.map((item) => {
+                {sectionItems.map((item) => {
                   const key = rowKey(item);
                   const isChecked = checked.has(key);
                   return (
@@ -261,6 +318,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 40,
     gap: 24,
+  },
+  viewModeToggle: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 999,
+    padding: 4,
+    gap: 4,
+  },
+  viewModeChip: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  viewModeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   section: {
     gap: 6,

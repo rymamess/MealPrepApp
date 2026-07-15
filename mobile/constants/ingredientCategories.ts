@@ -33,3 +33,20 @@ const CATEGORY_META: Record<IngredientCategory, CategoryMeta> = {
 export function getCategoryMeta(category: IngredientCategory): CategoryMeta {
   return CATEGORY_META[category];
 }
+
+export function isBuiltInCategory(category: string): category is IngredientCategory {
+  return (INGREDIENT_CATEGORIES as readonly string[]).includes(category);
+}
+
+// Variante tolérante : gère aussi le nom d'une catégorie personnelle (UserCategory),
+// utile partout où la liste de courses peut contenir un item recatégorisé par
+// l'utilisateur (voir server/utils/shoppingList.js#applyUserPreferences).
+export function resolveCategoryMeta(
+  category: string,
+  customCategories: { name: string; color: string; icon: string }[] = []
+): CategoryMeta {
+  if (isBuiltInCategory(category)) return getCategoryMeta(category);
+  const custom = customCategories.find((c) => c.name === category);
+  if (custom) return { label: custom.name, color: custom.color, icon: custom.icon };
+  return CATEGORY_META.Other;
+}

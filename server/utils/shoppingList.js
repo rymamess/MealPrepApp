@@ -84,6 +84,23 @@ function aggregate(items) {
   });
 }
 
+// Résout la catégorie et le magasin effectifs de chaque item selon les préférences
+// personnelles de l'utilisateur (voir server/routes/preferences.js) :
+// 1. Catégorie : override par ingrédient (UserIngredientPreference.category) sinon la
+//    catégorie déjà présente sur l'item (comportement historique, inchangé).
+// 2. Magasin (nouveau champ, ignoré par le tri "par catégorie" existant) : override par
+//    ingrédient sinon défaut de la catégorie effective sinon null ("non classé").
+// `ingredientPrefs` et `categoryStores` sont des Map indexées par nom d'ingrédient en
+// minuscules et par nom de catégorie, respectivement.
+export function applyUserPreferences(items, { ingredientPrefs, categoryStores }) {
+  return items.map((item) => {
+    const pref = ingredientPrefs.get(item.name);
+    const category = pref?.category || item.category;
+    const store = pref?.store || categoryStores.get(category) || null;
+    return { ...item, category, store };
+  });
+}
+
 // Retourne une liste plate d'items {name, category, quantity, unit, source, id?},
 // fusionnant les ingrédients/épices des recettes planifiées et les items ajoutés
 // manuellement dès que le nom et l'unité correspondent.

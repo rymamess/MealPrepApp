@@ -23,11 +23,16 @@ export type ShoppingListItem = {
   // permet de la retirer (voir source ci-dessous).
   id?: string;
   name: string;
-  category: IngredientCategory;
+  // Catégorie fixe (IngredientCategory) OU nom d'une UserCategory personnelle si un
+  // override par ingrédient s'applique (voir server/utils/shoppingList.js#applyUserPreferences).
+  category: IngredientCategory | string;
   quantity: number;
   unit: string;
   // 'recipe': vient uniquement des recettes planifiées.
   // 'manual': vient uniquement d'ajouts manuels.
   // 'mixed': recette + manuel fusionnés (retirer ne supprime que la part manuelle).
   source: 'recipe' | 'manual' | 'mixed';
+  // Magasin résolu (override ingrédient > défaut catégorie > null). Ignoré par le tri
+  // "par catégorie", utilisé par le tri "par magasin".
+  store: string | null;
 };

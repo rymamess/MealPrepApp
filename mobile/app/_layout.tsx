@@ -31,6 +31,7 @@ function RootNavigator() {
         <Stack.Screen name="userMeals/[id]" options={{ title: 'Détails de ma recette' }} />
         <Stack.Screen name="userMeals/new" options={{ title: 'Nouvelle recette' }} />
         <Stack.Screen name="userMeals/edit/[id]" options={{ title: 'Modifier la recette' }} />
+        <Stack.Screen name="preferences" options={{ title: 'Mes ingrédients & magasins' }} />
         <Stack.Screen name="planning/pick-recipe" options={{ presentation: 'modal', title: 'Choisir une recette' }} />
         <Stack.Screen name="planning/configure-entry" options={{ presentation: 'modal', title: 'Planifier la recette' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
@@ -10,6 +11,7 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const { user, logout } = useAuth();
+  const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -25,6 +27,13 @@ export default function ProfileScreen() {
         <Text style={[styles.email, { color: theme.text }]}>{user?.email}</Text>
         {user?.name ? <Text style={[styles.name, { color: theme.text }]}>{user.name}</Text> : null}
       </View>
+
+      <Pressable
+        style={[styles.preferencesButton, { borderColor: theme.border }]}
+        onPress={() => router.push('/preferences')}
+      >
+        <Text style={[styles.preferencesLabel, { color: theme.text }]}>Mes ingrédients & magasins</Text>
+      </Pressable>
 
       <Pressable
         style={[styles.logoutButton, { borderColor: theme.border, opacity: loggingOut ? 0.6 : 1 }]}
@@ -62,6 +71,16 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     opacity: 0.8,
+  },
+  preferencesButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  preferencesLabel: {
+    fontSize: 15,
+    fontWeight: '600',
   },
   logoutButton: {
     borderWidth: 1,

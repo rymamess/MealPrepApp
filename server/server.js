@@ -9,6 +9,7 @@ import mealsRouter from "./routes/meals.js";
 import mealPlanRouter from "./routes/mealPlan.js";
 import shoppingListItemsRouter from "./routes/shoppingListItems.js";
 import userMealsRouter from "./routes/userMeals.js";
+import preferencesRouter from "./routes/preferences.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/meals", mealsRouter);
 app.use("/mealPlan", mealPlanRouter);
 app.use("/shoppingListItems", shoppingListItemsRouter);
 app.use("/userMeals", userMealsRouter);
+app.use("/preferences", preferencesRouter);
 
 const PORT = process.env.PORT || 5000;
 
