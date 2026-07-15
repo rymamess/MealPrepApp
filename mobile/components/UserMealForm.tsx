@@ -3,10 +3,12 @@ import {
   Alert,
   Image,
   ScrollView,
+  StyleProp,
   StyleSheet,
   Text,
   TextInput,
   View,
+  ViewStyle,
   Pressable,
 } from 'react-native';
 
@@ -197,6 +199,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                 onChangeText={(text) => onChange('prepTime', text.replace(/[^0-9]/g, ''))}
                 theme={theme}
                 keyboardType="number-pad"
+                style={styles.rowItem}
               />
               <InputField
                 label="Cuisson (min)"
@@ -205,11 +208,12 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                 onChangeText={(text) => onChange('cookTime', text.replace(/[^0-9]/g, ''))}
                 theme={theme}
                 keyboardType="number-pad"
+                style={styles.rowItem}
               />
             </View>
 
             <View style={styles.row}>
-              <View style={styles.segmentBlock}>
+              <View style={[styles.segmentBlock, styles.rowItem]}>
                 <Text style={[styles.label, { color: theme.text }]}>Mode de cuisson</Text>
                 <SelectField
                   value={(meal.cookMode as CookMode) ?? 'Plaque'}
@@ -224,6 +228,7 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                 onChangeText={(text) => onChange('cookTemp', text.replace(/[^0-9]/g, ''))}
                 theme={theme}
                 keyboardType="number-pad"
+                style={styles.rowItem}
               />
             </View>
 
@@ -238,8 +243,9 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
                 }}
                 theme={theme}
                 keyboardType="number-pad"
+                style={styles.rowItem}
               />
-              <View style={styles.segmentBlock}>
+              <View style={[styles.segmentBlock, styles.rowItem]}>
                 <Text style={[styles.label, { color: theme.text }]}>Visibilité</Text>
                 <SegmentedControl
                   options={visibilityOptions}
@@ -517,6 +523,7 @@ type InputFieldProps = {
   multiline?: boolean;
   keyboardType?: 'default' | 'number-pad';
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  style?: StyleProp<ViewStyle>;
 };
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -528,9 +535,10 @@ const InputField: React.FC<InputFieldProps> = ({
   multiline = false,
   keyboardType = 'default',
   autoCapitalize,
+  style,
 }) => {
   return (
-    <View style={styles.inputBlock}>
+    <View style={[styles.inputBlock, style]}>
       <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
       <TextInput
         style={[
@@ -905,10 +913,11 @@ const styles = StyleSheet.create({
   },
   segmentBlock: {
     gap: 8,
-    flex: 1,
   },
   inputBlock: {
     gap: 8,
+  },
+  rowItem: {
     flex: 1,
   },
   listSection: {
