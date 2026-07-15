@@ -337,6 +337,12 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
           </Pressable>
         ) : null}
 
+        {!isLastStep ? (
+          <Pressable style={[styles.secondaryButton, { borderColor: theme.border }]} onPress={onSubmit}>
+            <Text style={[styles.secondaryLabel, { color: theme.text }]}>{submitLabel}</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable
           style={[styles.primaryButton, { backgroundColor: theme.tint }]}
           onPress={isLastStep ? onSubmit : handleNext}

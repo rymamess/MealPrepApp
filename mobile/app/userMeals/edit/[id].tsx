@@ -55,7 +55,7 @@ export default function EditUserMealPage() {
       meal={meal}
       onChange={handleChange}
       onSubmit={handleSave}
-      submitLabel="Mettre à jour la recette"
+      submitLabel="Mettre à jour"
     />
   );
 }
