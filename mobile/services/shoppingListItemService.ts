@@ -29,3 +29,20 @@ export const deleteManualShoppingItem = async (id: string): Promise<{ message: s
   if (!res.ok) throw new Error("Impossible de retirer cet ingrédient");
   return res.json();
 };
+
+// 🔹 Déplace ponctuellement un item vers un autre magasin pour cette période
+// uniquement (store = null pour revenir au magasin par défaut).
+export const setShoppingListItemStoreOverride = async (
+  name: string,
+  periodStart: string,
+  periodEnd: string,
+  store: string | null
+): Promise<{ store: string | null }> => {
+  const res = await fetch(`${API_BASE_URL}/shoppingListItems/store-override`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ name, periodStart, periodEnd, store }),
+  });
+  if (!res.ok) throw new Error("Impossible de déplacer cet item");
+  return res.json();
+};

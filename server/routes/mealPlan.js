@@ -5,6 +5,7 @@ import UserMeal from "../models/UserMeal.js";
 import ManualShoppingItem from "../models/ManualShoppingItem.js";
 import UserIngredientPreference from "../models/UserIngredientPreference.js";
 import UserCategoryStore from "../models/UserCategoryStore.js";
+import ShoppingListItemOverride from "../models/ShoppingListItemOverride.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import { computeShoppingList, applyUserPreferences } from "../utils/shoppingList.js";
 import { parseISODateUTC, parseQueryRange, overlapFilter } from "../utils/dateRange.js";
@@ -39,18 +40,20 @@ router.get("/shopping-list", async (req, res) => {
     if (!range) return;
 
     const filter = overlapFilter(req.userId, range.startDate, range.endDate);
-    const [entries, manualItems, ingredientPrefDocs, categoryStoreDocs] = await Promise.all([
+    const [entries, manualItems, ingredientPrefDocs, categoryStoreDocs, itemOverrideDocs] = await Promise.all([
       MealPlanEntry.find(filter).populate("itemId"),
       ManualShoppingItem.find(filter),
       UserIngredientPreference.find({ userId: req.userId }),
       UserCategoryStore.find({ userId: req.userId }),
+      ShoppingListItemOverride.find({ userId: req.userId, periodStart: range.startDate, periodEnd: range.endDate }),
     ]);
 
     const ingredientPrefs = new Map(ingredientPrefDocs.map((p) => [p.ingredientNameLower, p]));
     const categoryStores = new Map(categoryStoreDocs.map((c) => [c.category, c.store]));
+    const itemOverrides = new Map(itemOverrideDocs.map((o) => [o.itemKey, o.store]));
 
     const items = computeShoppingList(entries, manualItems);
-    res.json(applyUserPreferences(items, { ingredientPrefs, categoryStores }));
+    res.json(applyUserPreferences(items, { ingredientPrefs, categoryStores, itemOverrides }));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

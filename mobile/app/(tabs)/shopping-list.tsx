@@ -12,11 +12,15 @@ import { Colors } from '@/constants/theme';
 import { usePlanningPeriod } from '@/contexts/PlanningPeriodContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { fetchShoppingList } from '@/services/mealPlanService';
-import { fetchUserCategories } from '@/services/preferencesService';
-import { createManualShoppingItem, deleteManualShoppingItem } from '@/services/shoppingListItemService';
+import { fetchStores, fetchUserCategories } from '@/services/preferencesService';
+import {
+  createManualShoppingItem,
+  deleteManualShoppingItem,
+  setShoppingListItemStoreOverride,
+} from '@/services/shoppingListItemService';
 import { ShoppingListItem } from '@/types/MealPlan';
 import { Unit, UNITS } from '@/types/Meal';
-import { UserCategory } from '@/types/Preferences';
+import { Store, UserCategory } from '@/types/Preferences';
 import { getContrastTextColor } from '@/utils/color';
 
 const UNIT_OPTIONS = UNITS.map((unit) => ({ label: unit, value: unit }));
@@ -35,6 +39,7 @@ export default function ShoppingListScreen() {
   const { periodStart, periodEnd, setPeriodStart, setPeriodEnd } = usePlanningPeriod();
   const [items, setItems] = useState<ShoppingListItem[]>([]);
   const [userCategories, setUserCategories] = useState<UserCategory[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('category');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,17 +49,21 @@ export default function ShoppingListScreen() {
   const [pendingQuantity, setPendingQuantity] = useState('1');
   const [pendingUnit, setPendingUnit] = useState<Unit>('unité');
   const [submittingManual, setSubmittingManual] = useState(false);
+  const [storeMenuItem, setStoreMenuItem] = useState<ShoppingListItem | null>(null);
+  const [movingItem, setMovingItem] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [result, categories] = await Promise.all([
+      const [result, categories, storeList] = await Promise.all([
         fetchShoppingList(periodStart, periodEnd),
         fetchUserCategories(),
+        fetchStores(),
       ]);
       setItems(result);
       setUserCategories(categories);
+      setStores(storeList);
       setChecked(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
@@ -173,6 +182,20 @@ export default function ShoppingListScreen() {
     ]);
   };
 
+  const handleMoveToStore = async (store: string | null) => {
+    if (!storeMenuItem) return;
+    try {
+      setMovingItem(true);
+      await setShoppingListItemStoreOverride(storeMenuItem.name, periodStart, periodEnd, store);
+      setStoreMenuItem(null);
+      await load();
+    } catch (err) {
+      Alert.alert('Erreur', err instanceof Error ? err.message : "Impossible de déplacer cet item");
+    } finally {
+      setMovingItem(false);
+    }
+  };
+
   const contrastColor = getContrastTextColor(theme.tint);
 
   return (
@@ -230,6 +253,7 @@ export default function ShoppingListScreen() {
                       key={key}
                       style={[styles.itemRow, { borderColor: theme.border }]}
                       onPress={() => toggleChecked(key)}
+                      onLongPress={viewMode === 'store' ? () => setStoreMenuItem(item) : undefined}
                     >
                       <View
                         style={[
@@ -298,6 +322,48 @@ export default function ShoppingListScreen() {
                 {submittingManual ? 'Ajout…' : 'Ajouter à la liste'}
               </Text>
             </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={storeMenuItem !== null} transparent animationType="fade" onRequestClose={() => setStoreMenuItem(null)}>
+        <Pressable style={styles.quantityBackdrop} onPress={() => setStoreMenuItem(null)}>
+          <Pressable style={[styles.quantityCard, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.quantityTitle, { color: theme.text }]}>{storeMenuItem?.name}</Text>
+            <View style={styles.storeMenuList}>
+              <Pressable
+                style={[
+                  styles.storeMenuOption,
+                  { borderColor: theme.border },
+                  !storeMenuItem?.store && { backgroundColor: theme.tint, borderColor: theme.tint },
+                ]}
+                onPress={() => handleMoveToStore(null)}
+                disabled={movingItem}
+              >
+                <Text style={[styles.storeMenuLabel, { color: !storeMenuItem?.store ? contrastColor : theme.text }]}>
+                  Magasin par défaut
+                </Text>
+              </Pressable>
+              {stores.map((store) => {
+                const isActive = storeMenuItem?.store === store.name;
+                return (
+                  <Pressable
+                    key={store._id}
+                    style={[
+                      styles.storeMenuOption,
+                      { borderColor: theme.border },
+                      isActive && { backgroundColor: theme.tint, borderColor: theme.tint },
+                    ]}
+                    onPress={() => handleMoveToStore(store.name)}
+                    disabled={movingItem}
+                  >
+                    <Text style={[styles.storeMenuLabel, { color: isActive ? contrastColor : theme.text }]}>
+                      {store.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -446,5 +512,18 @@ const styles = StyleSheet.create({
   quantitySubmitLabel: {
     fontWeight: '700',
     fontSize: 14,
+  },
+  storeMenuList: {
+    gap: 8,
+  },
+  storeMenuOption: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  storeMenuLabel: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

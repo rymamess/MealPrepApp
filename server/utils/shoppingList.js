@@ -88,15 +88,18 @@ function aggregate(items) {
 // personnelles de l'utilisateur (voir server/routes/preferences.js) :
 // 1. Catégorie : override par ingrédient (UserIngredientPreference.category) sinon la
 //    catégorie déjà présente sur l'item (comportement historique, inchangé).
-// 2. Magasin (nouveau champ, ignoré par le tri "par catégorie" existant) : override par
-//    ingrédient sinon défaut de la catégorie effective sinon null ("non classé").
+// 2. Magasin : override ponctuel pour cette liste (ShoppingListItemOverride, priorité
+//    la plus haute) sinon override par ingrédient sinon défaut de la catégorie effective
+//    sinon null ("non classé"). L'override ponctuel ne modifie aucun défaut persistant.
 // `ingredientPrefs` et `categoryStores` sont des Map indexées par nom d'ingrédient en
-// minuscules et par nom de catégorie, respectivement.
-export function applyUserPreferences(items, { ingredientPrefs, categoryStores }) {
+// minuscules et par nom de catégorie, respectivement. `itemOverrides` est une Map
+// indexée par nom d'ingrédient en minuscules (optionnelle).
+export function applyUserPreferences(items, { ingredientPrefs, categoryStores, itemOverrides }) {
   return items.map((item) => {
     const pref = ingredientPrefs.get(item.name);
     const category = pref?.category || item.category;
-    const store = pref?.store || categoryStores.get(category) || null;
+    const overrideStore = itemOverrides?.get(item.name);
+    const store = overrideStore || pref?.store || categoryStores.get(category) || null;
     return { ...item, category, store };
   });
 }

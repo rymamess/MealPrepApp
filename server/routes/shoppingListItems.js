@@ -1,5 +1,6 @@
 import express from "express";
 import ManualShoppingItem from "../models/ManualShoppingItem.js";
+import ShoppingListItemOverride from "../models/ShoppingListItemOverride.js";
 import { INGREDIENT_CATEGORIES } from "../models/Ingredient.js";
 import { UNITS } from "../models/Meal.js";
 import { requireAuth } from "../middleware/requireAuth.js";
@@ -68,6 +69,42 @@ router.post("/", async (req, res) => {
     });
 
     res.status(201).json(created);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// 🔹 PUT déplacer ponctuellement un item de liste de courses vers un autre magasin,
+// pour la période donnée uniquement (ne modifie pas les défauts persistants). `store`
+// vide/absent revient au magasin par défaut (supprime l'override).
+router.put("/store-override", async (req, res) => {
+  try {
+    const { name, periodStart, periodEnd, store } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Name is required" });
+    }
+
+    const startDate = parseISODateUTC(periodStart, "start");
+    const endDate = parseISODateUTC(periodEnd, "end");
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "Invalid periodStart or periodEnd" });
+    }
+
+    const itemKey = name.trim().toLowerCase();
+    const filter = { userId: req.userId, periodStart: startDate, periodEnd: endDate, itemKey };
+
+    if (!store || !store.trim()) {
+      await ShoppingListItemOverride.deleteOne(filter);
+      return res.json({ store: null });
+    }
+
+    await ShoppingListItemOverride.findOneAndUpdate(
+      filter,
+      { $set: { store: store.trim() } },
+      { upsert: true }
+    );
+    res.json({ store: store.trim() });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
