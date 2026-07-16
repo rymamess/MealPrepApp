@@ -51,7 +51,12 @@ async function run() {
   for (const recipe of recipes) {
     const errors = [];
     if (!recipe.name) errors.push("name manquant");
-    if (!MEAL_CATEGORIES.includes(recipe.category)) errors.push(`category invalide: "${recipe.category}"`);
+    const categories = Array.isArray(recipe.category) ? recipe.category : [recipe.category];
+    if (!categories.length || categories.some((c) => !MEAL_CATEGORIES.includes(c))) {
+      errors.push(`category invalide: ${JSON.stringify(recipe.category)}`);
+    } else {
+      recipe.category = categories;
+    }
     if (recipe.difficulty && !DIFFICULTIES.includes(recipe.difficulty)) errors.push(`difficulty invalide: "${recipe.difficulty}"`);
     if (recipe.cookMode && !COOK_MODES.includes(recipe.cookMode)) errors.push(`cookMode invalide: "${recipe.cookMode}"`);
     errors.push(...validateItemList(recipe.ingredients, "ingredients"));

@@ -20,7 +20,7 @@ import { SelectField } from '@/components/SelectField';
 import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors, ThemeColors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { CookMode, COOK_MODES, Ingredient, Unit, UNITS } from '@/types/Meal';
+import { CookMode, COOK_MODES, Ingredient, MealCategory, Unit, UNITS } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
 import { getContrastTextColor, getRelativeLuminance } from '@/utils/color';
 
@@ -36,7 +36,7 @@ type SegmentOption<T extends string> = {
   value: T;
 };
 
-const categories: SegmentOption<UserMeal['category']>[] = [
+const categories: SegmentOption<MealCategory>[] = [
   { label: 'Déjeuner', value: 'Breakfast' },
   { label: 'Snack', value: 'Snack' },
   { label: 'Dîner', value: 'Lunch' },
@@ -171,9 +171,9 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
           <View style={styles.fieldGroup}>
             <View style={styles.segmentBlock}>
               <Text style={[styles.label, { color: theme.text }]}>Catégorie</Text>
-              <SegmentedControl
+              <MultiSegmentedControl
                 options={categories}
-                value={meal.category ?? 'Lunch'}
+                value={meal.category ?? ['Lunch']}
                 onChange={(value) => onChange('category', value)}
                 themeTint={theme.tint}
                 themeText={theme.text}
@@ -700,6 +700,58 @@ const SegmentedControl = <T extends string>({ options, value, onChange, themeTin
               },
             ]}
             onPress={() => onChange(option.value)}
+          >
+            <Text
+              style={[
+                styles.segmentLabel,
+                { color: isActive ? activeTextColor : `${themeText}cc` },
+              ]}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
+
+type MultiSegmentedControlProps<T extends string> = {
+  options: SegmentOption<T>[];
+  value: T[];
+  onChange: (value: T[]) => void;
+  themeTint: string;
+  themeText: string;
+};
+
+const MultiSegmentedControl = <T extends string>({ options, value, onChange, themeTint, themeText }: MultiSegmentedControlProps<T>) => {
+  const isTintLight = getRelativeLuminance(themeTint) > 0.65;
+  const activeTextColor = isTintLight ? '#111' : '#fff';
+
+  const toggle = (option: T) => {
+    if (value.includes(option)) {
+      if (value.length === 1) return; // au moins une catégorie doit rester sélectionnée
+      onChange(value.filter((v) => v !== option));
+    } else {
+      onChange([...value, option]);
+    }
+  };
+
+  return (
+    <View style={styles.segmentContainer}>
+      {options.map((option) => {
+        const isActive = value.includes(option.value);
+        return (
+          <Pressable
+            key={option.value}
+            style={[
+              styles.segmentChip,
+              {
+                backgroundColor: isActive ? themeTint : 'transparent',
+                borderColor: isActive ? themeTint : `${themeText}33`,
+              },
+            ]}
+            onPress={() => toggle(option.value)}
           >
             <Text
               style={[

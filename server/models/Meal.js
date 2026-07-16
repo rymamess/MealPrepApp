@@ -14,7 +14,12 @@ export const IngredientSchema = new mongoose.Schema({
 export const MealBaseSchema = new mongoose.Schema({
   name: { type: String, required: true },
   photo: { type: String },
-  category: { type: String, enum: ['Breakfast','Snack','Lunch','Dinner','Dessert'], required: true },
+  category: {
+    type: [String],
+    enum: ['Breakfast','Snack','Lunch','Dinner','Dessert'],
+    required: true,
+    validate: { validator: (arr) => Array.isArray(arr) && arr.length > 0, message: 'Au moins une catégorie est requise' },
+  },
   prepTime: { type: Number },
   cookTime: { type: Number },
   cookMode: { type: String, enum: COOK_MODES, default: 'Plaque' },

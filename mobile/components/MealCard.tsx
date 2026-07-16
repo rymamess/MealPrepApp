@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Meal } from '@/types/Meal';
+import { Meal, MEAL_CATEGORY_LABELS } from '@/types/Meal';
 
 type Props = {
   meal: Meal;
@@ -41,6 +41,11 @@ export const MealCard: React.FC<Props> = ({ meal, onPress, footer }) => {
           {`Préparation ${meal.prepTime} • Cuisson ${meal.cookTime}`}
         </Text>
         <Text style={[styles.tag, { color: theme.text }]}>{meal.difficulty}</Text>
+        {meal.category?.length ? (
+          <Text style={[styles.meta, { color: theme.text }]} numberOfLines={1}>
+            {meal.category.map((c) => MEAL_CATEGORY_LABELS[c]).join(' • ')}
+          </Text>
+        ) : null}
       </View>
       {footer ? <View style={[styles.footer, { borderTopColor: theme.border }]}>{footer}</View> : null}
     </Pressable>

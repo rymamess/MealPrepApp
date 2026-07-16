@@ -17,6 +17,16 @@ export const COOK_MODES = ['Plaque', 'Four', 'Airfryer', 'Micro-ondes', 'Grill',
 
 export type CookMode = (typeof COOK_MODES)[number];
 
+export type MealCategory = 'Breakfast' | 'Snack' | 'Lunch' | 'Dinner' | 'Dessert';
+
+export const MEAL_CATEGORY_LABELS: Record<MealCategory, string> = {
+  Breakfast: 'Déjeuner',
+  Snack: 'Snack',
+  Lunch: 'Dîner',
+  Dinner: 'Souper',
+  Dessert: 'Dessert',
+};
+
 export type Meal = {
   _id: string;
   name: string;
@@ -27,7 +37,7 @@ export type Meal = {
   cookTemp?: string; // en °C, optionnel
   difficulty: 'Easy' | 'Medium' | 'Hard';
   servings: number;
-  category: 'Breakfast' | 'Snack' | 'Lunch' | 'Dinner' | 'Dessert';
+  category: MealCategory[];
   ingredients: Ingredient[];
   spices: Spice[];
   description: string;

@@ -553,7 +553,12 @@ async function run() {
     const errors = [];
     if (!meal.name) errors.push("name manquant");
     if (!meal.photo || meal.photo === "PLACEHOLDER") errors.push("photo manquante");
-    if (!MEAL_CATEGORIES.includes(meal.category)) errors.push(`category invalide: "${meal.category}"`);
+    const categories = Array.isArray(meal.category) ? meal.category : [meal.category];
+    if (!categories.length || categories.some((c) => !MEAL_CATEGORIES.includes(c))) {
+      errors.push(`category invalide: ${JSON.stringify(meal.category)}`);
+    } else {
+      meal.category = categories;
+    }
     if (!DIFFICULTIES.includes(meal.difficulty)) errors.push(`difficulty invalide: "${meal.difficulty}"`);
     if (!COOK_MODES.includes(meal.cookMode)) errors.push(`cookMode invalide: "${meal.cookMode}"`);
     for (const [label, list] of [["ingredients", meal.ingredients], ["spices", meal.spices]]) {

@@ -3,7 +3,7 @@ import { ActivityIndicator, Image, ScrollView, StyleSheet, Text } from 'react-na
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Meal } from '@/types/Meal';
+import { Meal, MEAL_CATEGORY_LABELS } from '@/types/Meal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
@@ -40,6 +40,12 @@ export const MealDetailContent: React.FC<Props> = ({ meal, loading, error }) => 
       <ThemedText style={{ color: theme.text }}>
         {`Prep: ${meal.prepTime} min | Cook: ${meal.cookTime} min | Difficulty: ${meal.difficulty}`}
       </ThemedText>
+
+      {meal.category?.length ? (
+        <ThemedText style={{ color: theme.text }}>
+          {`Catégorie: ${meal.category.map((c) => MEAL_CATEGORY_LABELS[c]).join(' • ')}`}
+        </ThemedText>
+      ) : null}
 
       {meal.cookMode && meal.cookMode !== 'Aucune' ? (
         <ThemedText style={{ color: theme.text }}>

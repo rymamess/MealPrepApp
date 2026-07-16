@@ -10,7 +10,7 @@ export default function NewUserMealPage() {
   const [meal, setMeal] = useState<Partial<UserMeal>>({
     name: "",
     photo: "",
-    category: "Lunch",
+    category: ["Lunch"],
     prepTime: "0",
     cookTime: "0",
     cookMode: "Plaque",
