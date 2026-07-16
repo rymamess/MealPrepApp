@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 import UserMeal from './models/UserMeal.js';
 
+dotenv.config();
+
 const HARDCODED_USER_ID = '64f1234567890abcdef12345';
-const MONGO_URI = 'mongodb+srv://rymamessedaa_db_user:RYM4-mealprep@cluster0.mxi9dqi.mongodb.net/test?retryWrites=true&w=majority';
 
 async function createUserMeal() {
   try {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ Connected to MongoDB');
 
     const newMeal = new UserMeal({
