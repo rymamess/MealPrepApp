@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { UserMealForm } from "@/components/UserMealForm";
 import { createUserMeal } from "@/services/userMealService";
 import { UserMeal } from "@/types/UserMeal";
+import { setPendingScrollTarget } from "@/utils/pendingScrollTarget";
 
 export default function NewUserMealPage() {
   const router = useRouter();
@@ -30,8 +31,9 @@ export default function NewUserMealPage() {
         Alert.alert("Erreur", "Le nom de la recette est requis");
         return;
       }
-      await createUserMeal(meal as UserMeal);
-      router.push("/userMeals");
+      const created = await createUserMeal(meal as UserMeal);
+      setPendingScrollTarget(created._id);
+      router.back();
     } catch (err: any) {
       Alert.alert("Erreur", err.message);
     }

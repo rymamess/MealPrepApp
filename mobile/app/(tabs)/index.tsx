@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { MealCard } from '@/components/MealCard';
@@ -15,6 +16,7 @@ import { fetchMeals, toggleFavoriteMeal } from '@/services/mealService';
 import { deleteUserMeal, getUserMeals } from '@/services/userMealService';
 import { Meal } from '@/types/Meal';
 import { UserMeal } from '@/types/UserMeal';
+import { consumePendingScrollTarget } from '@/utils/pendingScrollTarget';
 
 type SegmentKey = 'discover' | 'personal';
 
@@ -35,9 +37,21 @@ export default function HomeScreen() {
   const [segment, setSegment] = useState<SegmentKey>('personal');
   const [search, setSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [scrollToId, setScrollToId] = useState<string | undefined>();
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
+
+  useFocusEffect(
+    useCallback(() => {
+      const pendingId = consumePendingScrollTarget();
+      if (pendingId) {
+        setSegment('personal');
+        setScrollToId(pendingId);
+        personalMeals.refresh();
+      }
+    }, [personalMeals.refresh])
+  );
 
   const activeCollection = segment === 'discover' ? publicMeals : personalMeals;
 
@@ -204,6 +218,7 @@ export default function HomeScreen() {
         onRefresh={activeCollection.refresh}
         onRetry={activeCollection.retry}
         emptyState={emptyState}
+        scrollToKey={segment === 'personal' ? scrollToId : undefined}
       />
     </ThemedView>
   );

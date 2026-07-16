@@ -27,7 +27,6 @@ function RootNavigator() {
       <Stack.Protected guard={!!token}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Recettes' }} />
         <Stack.Screen name="meals/[id]" options={{ title: 'Détails de la recette' }} />
-        <Stack.Screen name="userMeals/index" options={{ title: 'Mes recettes' }} />
         <Stack.Screen name="userMeals/[id]" options={{ title: 'Détails de ma recette' }} />
         <Stack.Screen name="userMeals/new" options={{ title: 'Nouvelle recette' }} />
         <Stack.Screen name="userMeals/edit/[id]" options={{ title: 'Modifier la recette' }} />

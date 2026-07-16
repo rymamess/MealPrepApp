@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { UserMealForm } from "@/components/UserMealForm";
 import { getUserMeal, updateUserMeal } from "@/services/userMealService";
 import { UserMeal } from "@/types/UserMeal";
+import { setPendingScrollTarget } from "@/utils/pendingScrollTarget";
 
 export default function EditUserMealPage() {
   const router = useRouter();
@@ -40,7 +41,8 @@ export default function EditUserMealPage() {
         return;
       }
       await updateUserMeal(id, meal as UserMeal);
-      router.push({ pathname: "/userMeals", params: { scrollToId: id } });
+      setPendingScrollTarget(id);
+      router.back();
     } catch (err: any) {
       Alert.alert("Erreur", err.message);
     }
