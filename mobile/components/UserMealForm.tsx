@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import * as ImagePicker from 'expo-image-picker';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { IngredientPickerModal } from '@/components/IngredientPickerModal';
@@ -369,26 +370,6 @@ type PhotoPickerFieldProps = {
   theme: ThemeColors;
 };
 
-const getAssetMimeType = (asset: ImagePicker.ImagePickerAsset) => {
-  if (asset.mimeType) {
-    return asset.mimeType;
-  }
-
-  const extension = asset.uri.split('.').pop()?.toLowerCase();
-
-  switch (extension) {
-    case 'png':
-      return 'image/png';
-    case 'webp':
-      return 'image/webp';
-    case 'heic':
-    case 'heif':
-      return 'image/heic';
-    default:
-      return 'image/jpeg';
-  }
-};
-
 const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onChange, theme }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const tintContrastColor = getRelativeLuminance(theme.tint) > 0.65 ? '#111' : '#fff';
@@ -423,7 +404,6 @@ const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onCha
         mediaTypes: ['images'],
         allowsEditing: true,
         quality: 0.8,
-        base64: true,
       };
 
       const result =
@@ -439,12 +419,21 @@ const PhotoPickerField: React.FC<PhotoPickerFieldProps> = ({ label, value, onCha
         return;
       }
 
-      if (!asset.base64) {
+      // Redimensionne (si besoin) et recompresse pour éviter de stocker des photos
+      // pleine résolution en base64 (le poids de chaque recette dans /userMeals explose sinon).
+      const context = ImageManipulator.manipulate(asset.uri);
+      if (asset.width && asset.width > 1000) {
+        context.resize({ width: 1000 });
+      }
+      const rendered = await context.renderAsync();
+      const compressed = await rendered.saveAsync({ compress: 0.6, format: SaveFormat.JPEG, base64: true });
+
+      if (!compressed.base64) {
         Alert.alert('Erreur', "Impossible de convertir l'image sélectionnée.");
         return;
       }
 
-      const dataUrl = `data:${getAssetMimeType(asset)};base64,${asset.base64}`;
+      const dataUrl = `data:image/jpeg;base64,${compressed.base64}`;
       onChange(dataUrl);
     } catch (error) {
       console.error(error);
