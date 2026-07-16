@@ -17,6 +17,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { IngredientPickerModal } from '@/components/IngredientPickerModal';
+import { SegmentedControl, SegmentOption, MultiSegmentedControl } from '@/components/SegmentedControl';
 import { SelectField } from '@/components/SelectField';
 import { getCategoryMeta, IngredientCategory, INGREDIENT_CATEGORIES } from '@/constants/ingredientCategories';
 import { Colors, ThemeColors } from '@/constants/theme';
@@ -30,11 +31,6 @@ type Props = {
   onChange: (key: keyof UserMeal, value: any) => void;
   onSubmit: () => void;
   submitLabel?: string;
-};
-
-type SegmentOption<T extends string> = {
-  label: string;
-  value: T;
 };
 
 const categories: SegmentOption<MealCategory>[] = [
@@ -662,101 +658,6 @@ const EditableList: React.FC<EditableListProps> = ({
   );
 };
 
-type SegmentedControlProps<T extends string> = {
-  options: SegmentOption<T>[];
-  value: T;
-  onChange: (value: T) => void;
-  themeTint: string;
-  themeText: string;
-};
-
-const SegmentedControl = <T extends string>({ options, value, onChange, themeTint, themeText }: SegmentedControlProps<T>) => {
-  const isTintLight = getRelativeLuminance(themeTint) > 0.65;
-  const activeTextColor = isTintLight ? '#111' : '#fff';
-
-  return (
-    <View style={styles.segmentContainer}>
-      {options.map((option) => {
-        const isActive = option.value === value;
-        return (
-          <Pressable
-            key={option.value}
-            style={[
-              styles.segmentChip,
-              {
-                backgroundColor: isActive ? themeTint : 'transparent',
-                borderColor: isActive ? themeTint : `${themeText}33`,
-              },
-            ]}
-            onPress={() => onChange(option.value)}
-          >
-            <Text
-              style={[
-                styles.segmentLabel,
-                { color: isActive ? activeTextColor : `${themeText}cc` },
-              ]}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-};
-
-type MultiSegmentedControlProps<T extends string> = {
-  options: SegmentOption<T>[];
-  value: T[];
-  onChange: (value: T[]) => void;
-  themeTint: string;
-  themeText: string;
-};
-
-const MultiSegmentedControl = <T extends string>({ options, value, onChange, themeTint, themeText }: MultiSegmentedControlProps<T>) => {
-  const isTintLight = getRelativeLuminance(themeTint) > 0.65;
-  const activeTextColor = isTintLight ? '#111' : '#fff';
-
-  const toggle = (option: T) => {
-    if (value.includes(option)) {
-      if (value.length === 1) return; // au moins une catégorie doit rester sélectionnée
-      onChange(value.filter((v) => v !== option));
-    } else {
-      onChange([...value, option]);
-    }
-  };
-
-  return (
-    <View style={styles.segmentContainer}>
-      {options.map((option) => {
-        const isActive = value.includes(option.value);
-        return (
-          <Pressable
-            key={option.value}
-            style={[
-              styles.segmentChip,
-              {
-                backgroundColor: isActive ? themeTint : 'transparent',
-                borderColor: isActive ? themeTint : `${themeText}33`,
-              },
-            ]}
-            onPress={() => toggle(option.value)}
-          >
-            <Text
-              style={[
-                styles.segmentLabel,
-                { color: isActive ? activeTextColor : `${themeText}cc` },
-              ]}
-            >
-              {option.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -879,21 +780,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     flexWrap: 'wrap',
-  },
-  segmentContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  segmentChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  segmentLabel: {
-    fontWeight: '600',
-    fontSize: 13,
   },
   listItem: {
     gap: 10,

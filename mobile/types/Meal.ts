@@ -27,6 +27,14 @@ export const MEAL_CATEGORY_LABELS: Record<MealCategory, string> = {
   Dessert: 'Dessert',
 };
 
+export type Difficulty = 'Easy' | 'Medium' | 'Hard';
+
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  Easy: 'Facile',
+  Medium: 'Intermédiaire',
+  Hard: 'Expert',
+};
+
 export type Meal = {
   _id: string;
   name: string;
@@ -35,7 +43,7 @@ export type Meal = {
   cookTime: string;
   cookMode: CookMode;
   cookTemp?: string; // en °C, optionnel
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: Difficulty;
   servings: number;
   category: MealCategory[];
   ingredients: Ingredient[];

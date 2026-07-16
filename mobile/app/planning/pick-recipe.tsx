@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { MealCard } from '@/components/MealCard';
+import { MealFilterModal } from '@/components/MealFilterModal';
 import { MealGrid } from '@/components/MealGrid';
 import { SearchInput } from '@/components/SearchInput';
 import { ThemedView } from '@/components/themed-view';
@@ -15,6 +16,7 @@ import { getUserMeals } from '@/services/userMealService';
 import { Meal } from '@/types/Meal';
 import { MealType } from '@/types/MealPlan';
 import { getContrastTextColor } from '@/utils/color';
+import { DEFAULT_MEAL_FILTERS, MealFilters, countActiveMealFilters, matchesMealFilters } from '@/utils/mealFilters';
 
 type SegmentKey = 'discover' | 'personal';
 
@@ -31,6 +33,8 @@ export default function PickRecipeScreen() {
   const [segment, setSegment] = useState<SegmentKey>('personal');
   const [search, setSearch] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [filters, setFilters] = useState<MealFilters>(DEFAULT_MEAL_FILTERS);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
@@ -42,8 +46,9 @@ export default function PickRecipeScreen() {
     const query = search.trim().toLowerCase();
     return activeCollection.data
       .filter((meal) => !query || meal.name.toLowerCase().includes(query))
-      .filter((meal) => !showFavoritesOnly || meal.isFavorite);
-  }, [activeCollection.data, search, showFavoritesOnly]);
+      .filter((meal) => !showFavoritesOnly || meal.isFavorite)
+      .filter((meal) => matchesMealFilters(meal, filters));
+  }, [activeCollection.data, search, showFavoritesOnly, filters]);
 
   const toggleFavoriteInData = (mealId: string, isFavorite: boolean) => {
     if (segment === 'discover') {
@@ -100,6 +105,22 @@ export default function PickRecipeScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel="Filtrer les recettes"
+          hitSlop={8}
+          style={[
+            styles.favoritesFilterButton,
+            { borderColor: theme.border, backgroundColor: countActiveMealFilters(filters) > 0 ? theme.tint : theme.card },
+          ]}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <MaterialCommunityIcons
+            name="tune-variant"
+            size={20}
+            color={countActiveMealFilters(filters) > 0 ? contrastColor : theme.text}
+          />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel="Afficher uniquement les favoris"
           hitSlop={8}
           style={[
@@ -115,6 +136,13 @@ export default function PickRecipeScreen() {
           />
         </Pressable>
       </View>
+
+      <MealFilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        filters={filters}
+        onChange={setFilters}
+      />
 
       <MealGrid
         data={filteredData}
