@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -52,9 +52,13 @@ export default function PreferencesScreen() {
   const [userCategories, setUserCategories] = useState<UserCategory[]>([]);
   const [categoryStores, setCategoryStores] = useState<CategoryStoreDefault[]>([]);
   const [ingredientPrefs, setIngredientPrefs] = useState<IngredientPreference[]>([]);
+  const isFirstLoad = useRef(true);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    // Seul le tout premier chargement affiche le spinner plein écran : les rechargements
+    // déclenchés par une sauvegarde (onChanged) ne doivent pas démonter le ScrollView,
+    // sinon chaque Section perd son état "déplié/replié" et se réinitialise au défaut.
+    if (isFirstLoad.current) setLoading(true);
     try {
       const [ingredients, storesList, categories, catStores, prefs] = await Promise.all([
         fetchIngredients(),
@@ -72,6 +76,7 @@ export default function PreferencesScreen() {
       Alert.alert('Erreur', err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
+      isFirstLoad.current = false;
     }
   }, []);
 
