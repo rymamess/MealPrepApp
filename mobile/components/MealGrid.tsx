@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -26,6 +26,7 @@ type MealGridProps<T> = {
   onRefresh?: () => void;
   emptyState?: React.ReactNode;
   onRetry?: () => void;
+  scrollToKey?: string;
 };
 
 export function MealGrid<T>({
@@ -38,10 +39,13 @@ export function MealGrid<T>({
   onRefresh,
   emptyState,
   onRetry,
+  scrollToKey,
 }: MealGridProps<T>) {
   const { width } = useWindowDimensions();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+  const listRef = useRef<FlatList<T | null>>(null);
+  const scrolledKeyRef = useRef<string | undefined>(undefined);
 
   const numColumns = useMemo(() => {
     return Math.max(1, Math.floor((width - SPACING) / (MIN_CARD_WIDTH + SPACING)));
@@ -58,6 +62,21 @@ export function MealGrid<T>({
     const placeholders: (T | null)[] = Array(numColumns - remainder).fill(null);
     return [...data, ...placeholders];
   }, [data, numColumns]);
+
+  useEffect(() => {
+    if (!scrollToKey || loading || data.length === 0) return;
+    if (scrolledKeyRef.current === scrollToKey) return;
+
+    const index = dataWithPlaceholders.findIndex(
+      (item, idx) => item != null && keyExtractor(item, idx) === scrollToKey
+    );
+    if (index === -1) return;
+
+    scrolledKeyRef.current = scrollToKey;
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+    });
+  }, [scrollToKey, data, loading, dataWithPlaceholders, keyExtractor]);
 
   if (loading) {
     return (
@@ -88,6 +107,7 @@ export function MealGrid<T>({
 
   return (
     <FlatList
+      ref={listRef}
       key={numColumns}
       data={dataWithPlaceholders}
       keyExtractor={(item, index) => (item ? keyExtractor(item, index) : `placeholder-${index}`)}
@@ -102,6 +122,11 @@ export function MealGrid<T>({
       contentContainerStyle={styles.listContent}
       columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
       showsVerticalScrollIndicator={false}
+      onScrollToIndexFailed={(info) => {
+        setTimeout(() => {
+          listRef.current?.scrollToIndex({ index: info.index, animated: true, viewPosition: 0.5 });
+        }, 100);
+      }}
       refreshControl={
         onRefresh
           ? (

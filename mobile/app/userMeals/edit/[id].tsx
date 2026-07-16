@@ -40,7 +40,7 @@ export default function EditUserMealPage() {
         return;
       }
       await updateUserMeal(id, meal as UserMeal);
-      router.push("/userMeals");
+      router.push({ pathname: "/userMeals", params: { scrollToId: id } });
     } catch (err: any) {
       Alert.alert("Erreur", err.message);
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MealCard } from '@/components/MealCard';
@@ -15,6 +15,7 @@ import { UserMeal } from '@/types/UserMeal';
 
 export default function UserMealsPage() {
   const router = useRouter();
+  const { scrollToId } = useLocalSearchParams<{ scrollToId?: string }>();
   const { data, loading, error, refresh, retry, refreshing, setData } = useMealCollection(getUserMeals);
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
@@ -63,6 +64,7 @@ export default function UserMealsPage() {
           renderItem={(item) => (
             <MealCard meal={item} onPress={() => handleOpenMeal(item._id)} footer={renderFooter(item)} />
           )}
+          scrollToKey={scrollToId}
           refreshing={refreshing}
           onRefresh={refresh}
           onRetry={retry}
