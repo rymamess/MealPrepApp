@@ -4,7 +4,7 @@ import { authHeaders } from "@/services/apiClient";
 
 // 🔹 Récupérer tous les repas
 export const fetchMeals = async (): Promise<Meal[]> => {
-  const res = await fetch(`${API_BASE_URL}/meals`);
+  const res = await fetch(`${API_BASE_URL}/meals`, { headers: await authHeaders() });
   if (!res.ok) throw new Error('Erreur lors de la récupération des repas');
   return res.json();
 };
@@ -24,5 +24,19 @@ export const createMeal = async (meal: Partial<Meal>): Promise<Meal> => {
     body: JSON.stringify(meal),
   });
   if (!res.ok) throw new Error('Erreur lors de la création du repas');
+  return res.json();
+};
+
+// 🔹 Basculer une recette (Meal ou UserMeal) en favori / retirer des favoris
+export const toggleFavoriteMeal = async (
+  itemType: 'Meal' | 'UserMeal',
+  itemId: string
+): Promise<{ isFavorite: boolean }> => {
+  const res = await fetch(`${API_BASE_URL}/meals/favorites/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify({ itemType, itemId }),
+  });
+  if (!res.ok) throw new Error('Impossible de modifier les favoris');
   return res.json();
 };

@@ -41,4 +41,5 @@ export type Meal = {
   ingredients: Ingredient[];
   spices: Spice[];
   description: string;
+  isFavorite: boolean;
 };

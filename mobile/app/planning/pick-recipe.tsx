@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { MealCard } from '@/components/MealCard';
 import { MealGrid } from '@/components/MealGrid';
@@ -9,8 +10,9 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useMealCollection } from '@/hooks/useMealCollection';
-import { fetchMeals } from '@/services/mealService';
+import { fetchMeals, toggleFavoriteMeal } from '@/services/mealService';
 import { getUserMeals } from '@/services/userMealService';
+import { Meal } from '@/types/Meal';
 import { MealType } from '@/types/MealPlan';
 import { getContrastTextColor } from '@/utils/color';
 
@@ -28,6 +30,7 @@ export default function PickRecipeScreen() {
 
   const [segment, setSegment] = useState<SegmentKey>('personal');
   const [search, setSearch] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   const publicMeals = useMealCollection(fetchMeals);
   const personalMeals = useMealCollection(getUserMeals);
@@ -37,9 +40,29 @@ export default function PickRecipeScreen() {
 
   const filteredData = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return activeCollection.data;
-    return activeCollection.data.filter((meal) => meal.name.toLowerCase().includes(query));
-  }, [activeCollection.data, search]);
+    return activeCollection.data
+      .filter((meal) => !query || meal.name.toLowerCase().includes(query))
+      .filter((meal) => !showFavoritesOnly || meal.isFavorite);
+  }, [activeCollection.data, search, showFavoritesOnly]);
+
+  const toggleFavoriteInData = (mealId: string, isFavorite: boolean) => {
+    if (segment === 'discover') {
+      publicMeals.setData((prev) => prev.map((m) => (m._id === mealId ? { ...m, isFavorite } : m)));
+    } else {
+      personalMeals.setData((prev) => prev.map((m) => (m._id === mealId ? { ...m, isFavorite } : m)));
+    }
+  };
+
+  const handleToggleFavorite = async (meal: Meal) => {
+    const itemType = segment === 'discover' ? 'Meal' : 'UserMeal';
+    toggleFavoriteInData(meal._id, !meal.isFavorite);
+    try {
+      await toggleFavoriteMeal(itemType, meal._id);
+    } catch (err) {
+      toggleFavoriteInData(meal._id, meal.isFavorite);
+      Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de modifier les favoris');
+    }
+  };
 
   const handlePick = (mealId: string) => {
     router.push({
@@ -72,7 +95,25 @@ export default function PickRecipeScreen() {
       </View>
 
       <View style={styles.searchWrapper}>
-        <SearchInput value={search} onChangeText={setSearch} placeholder="Rechercher une recette…" />
+        <View style={{ flex: 1 }}>
+          <SearchInput value={search} onChangeText={setSearch} placeholder="Rechercher une recette…" />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Afficher uniquement les favoris"
+          hitSlop={8}
+          style={[
+            styles.favoritesFilterButton,
+            { borderColor: theme.border, backgroundColor: showFavoritesOnly ? theme.tint : theme.card },
+          ]}
+          onPress={() => setShowFavoritesOnly((v) => !v)}
+        >
+          <MaterialCommunityIcons
+            name={showFavoritesOnly ? 'heart' : 'heart-outline'}
+            size={20}
+            color={showFavoritesOnly ? contrastColor : theme.text}
+          />
+        </Pressable>
       </View>
 
       <MealGrid
@@ -81,7 +122,12 @@ export default function PickRecipeScreen() {
         error={activeCollection.error}
         keyExtractor={(item) => item._id}
         renderItem={(item) => (
-          <MealCard meal={item} onPress={() => handlePick(item._id)} />
+          <MealCard
+            meal={item}
+            onPress={() => handlePick(item._id)}
+            isFavorite={item.isFavorite}
+            onToggleFavorite={() => handleToggleFavorite(item)}
+          />
         )}
         refreshing={activeCollection.refreshing}
         onRefresh={activeCollection.refresh}
@@ -121,7 +167,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   searchWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     marginHorizontal: 24,
     marginBottom: 12,
+  },
+  favoritesFilterButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

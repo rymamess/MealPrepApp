@@ -1,5 +1,6 @@
 import express from "express";
 import UserMeal from "../models/UserMeal.js";
+import User from "../models/User.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = express.Router();
@@ -7,10 +8,21 @@ const router = express.Router();
 // 🔹 GET all user meals
 router.get("/", requireAuth, async (req, res) => {
   try {
-    console.log("GET /userMeals");
-    const userMeals = await UserMeal.find({ userId: req.userId });
-    console.log(`Found ${userMeals.length} userMeals`);
-    res.json(userMeals);
+    const [userMeals, user] = await Promise.all([
+      UserMeal.find({ userId: req.userId }).lean(),
+      User.findById(req.userId),
+    ]);
+
+    const favoriteKeys = new Set(
+      (user?.favoriteMeals ?? []).map((f) => `${f.itemType}:${f.itemId}`)
+    );
+
+    const items = userMeals.map((meal) => ({
+      ...meal,
+      isFavorite: favoriteKeys.has(`UserMeal:${meal._id}`),
+    }));
+
+    res.json(items);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

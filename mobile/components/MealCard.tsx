@@ -1,6 +1,7 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -10,9 +11,11 @@ type Props = {
   meal: Meal;
   onPress?: () => void;
   footer?: React.ReactNode;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 };
 
-export const MealCard: React.FC<Props> = ({ meal, onPress, footer }) => {
+export const MealCard: React.FC<Props> = ({ meal, onPress, footer, isFavorite, onToggleFavorite }) => {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
@@ -32,7 +35,18 @@ export const MealCard: React.FC<Props> = ({ meal, onPress, footer }) => {
       android_ripple={{ color: `${theme.tint}33` }}
       onPress={handlePress}
     >
-      <Image source={{ uri: meal.photo }} style={styles.image} />
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: meal.photo }} style={styles.image} />
+        {onToggleFavorite ? (
+          <Pressable style={styles.favoriteButton} onPress={onToggleFavorite} hitSlop={8}>
+            <MaterialCommunityIcons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={20}
+              color={isFavorite ? '#ef4444' : '#ffffff'}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       <View style={styles.info}>
         <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
           {meal.name}
@@ -63,9 +77,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 12,
   },
+  imageWrapper: {
+    position: 'relative',
+  },
   image: {
     width: '100%',
     height: 160,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   info: {
     paddingHorizontal: 14,

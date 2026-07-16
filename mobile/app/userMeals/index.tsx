@@ -10,6 +10,7 @@ import { UserMealActions } from '@/components/UserMealActions';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useMealCollection } from '@/hooks/useMealCollection';
+import { toggleFavoriteMeal } from '@/services/mealService';
 import { deleteUserMeal, getUserMeals } from '@/services/userMealService';
 import { UserMeal } from '@/types/UserMeal';
 
@@ -46,6 +47,16 @@ export default function UserMealsPage() {
     ]);
   };
 
+  const handleToggleFavorite = async (meal: UserMeal) => {
+    setData((prev) => prev.map((m) => (m._id === meal._id ? { ...m, isFavorite: !m.isFavorite } : m)));
+    try {
+      await toggleFavoriteMeal('UserMeal', meal._id);
+    } catch (err) {
+      setData((prev) => prev.map((m) => (m._id === meal._id ? { ...m, isFavorite: meal.isFavorite } : m)));
+      Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de modifier les favoris');
+    }
+  };
+
   const renderFooter = (meal: UserMeal) => (
     <UserMealActions
       onEdit={() => router.push({ pathname: '/userMeals/edit/[id]', params: { id: meal._id } })}
@@ -62,7 +73,13 @@ export default function UserMealsPage() {
           error={error}
           keyExtractor={(item) => item._id}
           renderItem={(item) => (
-            <MealCard meal={item} onPress={() => handleOpenMeal(item._id)} footer={renderFooter(item)} />
+            <MealCard
+              meal={item}
+              onPress={() => handleOpenMeal(item._id)}
+              footer={renderFooter(item)}
+              isFavorite={item.isFavorite}
+              onToggleFavorite={() => handleToggleFavorite(item)}
+            />
           )}
           scrollToKey={scrollToId}
           refreshing={refreshing}
