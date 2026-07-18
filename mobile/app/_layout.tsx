@@ -4,13 +4,14 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
+import { AppLoadingScreen } from '@/components/AppLoadingScreen';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 function RootNavigator() {
   const { token, loading } = useAuth();
 
-  if (loading) return null;
+  if (loading) return <AppLoadingScreen />;
 
   return (
     <Stack

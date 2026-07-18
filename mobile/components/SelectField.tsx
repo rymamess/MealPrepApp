@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -14,9 +14,10 @@ type Props<T extends string> = {
   value: T;
   options: Option<T>[];
   onChange: (value: T) => void;
+  disabled?: boolean;
 };
 
-export function SelectField<T extends string>({ value, options, onChange }: Props<T>) {
+export function SelectField<T extends string>({ value, options, onChange, disabled = false }: Props<T>) {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
   const [visible, setVisible] = useState(false);
@@ -31,11 +32,19 @@ export function SelectField<T extends string>({ value, options, onChange }: Prop
 
   return (
     <View>
-      <Pressable style={[styles.field, { borderColor: theme.border }]} onPress={() => setVisible(true)}>
+      <Pressable
+        style={[styles.field, { borderColor: theme.border, opacity: disabled ? 0.5 : 1 }]}
+        onPress={() => !disabled && setVisible(true)}
+        disabled={disabled}
+      >
         <Text style={[styles.fieldText, { color: theme.text }]} numberOfLines={1}>
           {selectedLabel}
         </Text>
-        <Text style={[styles.chevron, { color: `${theme.text}88` }]}>▾</Text>
+        {disabled ? (
+          <ActivityIndicator size="small" color={theme.text} />
+        ) : (
+          <Text style={[styles.chevron, { color: `${theme.text}88` }]}>▾</Text>
+        )}
       </Pressable>
 
       <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>

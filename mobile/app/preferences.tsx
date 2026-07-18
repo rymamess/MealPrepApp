@@ -154,13 +154,22 @@ function FavoritesSection({
   onChanged: () => void;
 }) {
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const handleToggle = async (item: CatalogIngredient) => {
+    const key = `${item.itemType}-${item.itemId}`;
+    setPendingIds((prev) => new Set(prev).add(key));
     try {
       await toggleFavoriteIngredient(item.itemType, item.itemId);
       onChanged();
     } catch (err) {
       Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de modifier les favoris');
+    } finally {
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
@@ -179,14 +188,19 @@ function FavoritesSection({
       ) : (
         favorites.map((item) => {
           const meta = getCategoryMeta(item.category);
+          const isPending = pendingIds.has(`${item.itemType}-${item.itemId}`);
           return (
             <View key={`${item.itemType}-${item.itemId}`} style={[styles.row, { borderColor: theme.border }]}>
               <View style={[styles.iconBadge, { backgroundColor: meta.color }]}>
                 <MaterialCommunityIcons name={meta.icon as any} size={16} color={getContrastTextColor(meta.color)} />
               </View>
               <Text style={[styles.rowLabel, { color: theme.text }]}>{item.name}</Text>
-              <Pressable onPress={() => handleToggle(item)} hitSlop={8}>
-                <MaterialCommunityIcons name="star" size={20} color="#f4c542" />
+              <Pressable onPress={() => handleToggle(item)} hitSlop={8} disabled={isPending}>
+                {isPending ? (
+                  <ActivityIndicator size="small" color={`${theme.text}88`} />
+                ) : (
+                  <MaterialCommunityIcons name="star" size={20} color="#f4c542" />
+                )}
               </Pressable>
             </View>
           );
@@ -309,8 +323,12 @@ function StoresSection({
         text: 'Retirer',
         style: 'destructive',
         onPress: async () => {
-          await deleteStore(store._id);
-          onChanged();
+          try {
+            await deleteStore(store._id);
+            onChanged();
+          } catch (err) {
+            Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de retirer ce magasin');
+          }
         },
       },
     ]);
@@ -388,8 +406,12 @@ function CategoriesSection({
         text: 'Retirer',
         style: 'destructive',
         onPress: async () => {
-          await deleteUserCategory(category._id);
-          onChanged();
+          try {
+            await deleteUserCategory(category._id);
+            onChanged();
+          } catch (err) {
+            Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de retirer cette catégorie');
+          }
         },
       },
     ]);
@@ -474,13 +496,18 @@ function CategoryStoreSection({
   storeOptions: { label: string; value: string }[];
   onChanged: () => void;
 }) {
+  const [pendingCategory, setPendingCategory] = useState<string | null>(null);
+
   const handleChange = async (category: string, value: string) => {
+    setPendingCategory(category);
     try {
       if (value === NO_STORE) await deleteCategoryStore(category);
       else await setCategoryStore(category, value);
       onChanged();
     } catch (err) {
       Alert.alert('Erreur', err instanceof Error ? err.message : "Impossible de mettre à jour l'association");
+    } finally {
+      setPendingCategory(null);
     }
   };
 
@@ -496,7 +523,12 @@ function CategoryStoreSection({
             </View>
             <Text style={[styles.rowLabel, { color: theme.text }]}>{meta.label}</Text>
             <View style={styles.rowSelect}>
-              <SelectField value={currentStore} options={storeOptions} onChange={(v) => handleChange(category, v)} />
+              <SelectField
+                value={currentStore}
+                options={storeOptions}
+                onChange={(v) => handleChange(category, v)}
+                disabled={pendingCategory === category}
+              />
             </View>
           </View>
         );
@@ -526,6 +558,8 @@ function IngredientOverridesSection({
   const [pendingName, setPendingName] = useState<string | null>(null);
   const [pendingCategory, setPendingCategory] = useState(NO_STORE);
   const [pendingStore, setPendingStore] = useState(NO_STORE);
+  const [confirming, setConfirming] = useState(false);
+  const [pendingRowId, setPendingRowId] = useState<string | null>(null);
 
   const categoryOptions = useMemo(
     () => [{ label: 'Aucune (garder la catégorie de la recette)', value: NO_STORE }, ...allCategories.map((c) => ({
@@ -548,22 +582,43 @@ function IngredientOverridesSection({
       Alert.alert('Erreur', 'Choisis au moins une catégorie ou un magasin.');
       return;
     }
-    await setIngredientPreference(pendingName, {
-      category: pendingCategory === NO_STORE ? null : pendingCategory,
-      store: pendingStore === NO_STORE ? null : pendingStore,
-    });
-    setPendingName(null);
-    onChanged();
+    setConfirming(true);
+    try {
+      await setIngredientPreference(pendingName, {
+        category: pendingCategory === NO_STORE ? null : pendingCategory,
+        store: pendingStore === NO_STORE ? null : pendingStore,
+      });
+      setPendingName(null);
+      onChanged();
+    } catch (err) {
+      Alert.alert('Erreur', err instanceof Error ? err.message : "Impossible d'enregistrer ce cas particulier");
+    } finally {
+      setConfirming(false);
+    }
   };
 
   const handleChangeStore = async (pref: IngredientPreference, value: string) => {
-    await setIngredientPreference(pref.ingredientName, { store: value === NO_STORE ? null : value });
-    onChanged();
+    setPendingRowId(pref._id);
+    try {
+      await setIngredientPreference(pref.ingredientName, { store: value === NO_STORE ? null : value });
+      onChanged();
+    } catch (err) {
+      Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de mettre à jour le magasin');
+    } finally {
+      setPendingRowId(null);
+    }
   };
 
   const handleChangeCategory = async (pref: IngredientPreference, value: string) => {
-    await setIngredientPreference(pref.ingredientName, { category: value === NO_STORE ? null : value });
-    onChanged();
+    setPendingRowId(pref._id);
+    try {
+      await setIngredientPreference(pref.ingredientName, { category: value === NO_STORE ? null : value });
+      onChanged();
+    } catch (err) {
+      Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de mettre à jour la catégorie');
+    } finally {
+      setPendingRowId(null);
+    }
   };
 
   const handleDelete = (pref: IngredientPreference) => {
@@ -573,8 +628,12 @@ function IngredientOverridesSection({
         text: 'Retirer',
         style: 'destructive',
         onPress: async () => {
-          await deleteIngredientPreference(pref.ingredientName);
-          onChanged();
+          try {
+            await deleteIngredientPreference(pref.ingredientName);
+            onChanged();
+          } catch (err) {
+            Alert.alert('Erreur', err instanceof Error ? err.message : 'Impossible de retirer ce cas particulier');
+          }
         },
       },
     ]);
@@ -600,6 +659,7 @@ function IngredientOverridesSection({
                   value={pref.category ?? NO_STORE}
                   options={categoryOptions}
                   onChange={(v) => handleChangeCategory(pref, v)}
+                  disabled={pendingRowId === pref._id}
                 />
               </View>
               <View style={styles.overrideField}>
@@ -608,6 +668,7 @@ function IngredientOverridesSection({
                   value={pref.store ?? NO_STORE}
                   options={storeOptions}
                   onChange={(v) => handleChangeStore(pref, v)}
+                  disabled={pendingRowId === pref._id}
                 />
               </View>
             </View>
@@ -629,11 +690,15 @@ function IngredientOverridesSection({
             </View>
           </View>
           <View style={styles.overrideHeader}>
-            <Pressable onPress={() => setPendingName(null)} hitSlop={8}>
+            <Pressable onPress={() => setPendingName(null)} hitSlop={8} disabled={confirming}>
               <Text style={[styles.removeLabel, { color: `${theme.text}99` }]}>Annuler</Text>
             </Pressable>
-            <Pressable onPress={handleConfirmPending} hitSlop={8}>
-              <Text style={[styles.removeLabel, { color: theme.tint }]}>Enregistrer</Text>
+            <Pressable onPress={handleConfirmPending} hitSlop={8} disabled={confirming}>
+              {confirming ? (
+                <ActivityIndicator size="small" color={theme.tint} />
+              ) : (
+                <Text style={[styles.removeLabel, { color: theme.tint }]}>Enregistrer</Text>
+              )}
             </Pressable>
           </View>
         </View>

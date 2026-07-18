@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import fs from "fs";
 import User from "../models/User.js";
 import UserMeal from "../models/UserMeal.js";
+import UserIngredient from "../models/UserIngredient.js";
 import Ingredient, { INGREDIENT_CATEGORIES } from "../models/Ingredient.js";
 import { UNITS, COOK_MODES } from "../models/Meal.js";
 
@@ -27,9 +28,30 @@ function validateItemList(items, label) {
   return errors;
 }
 
-async function ensureIngredientInCatalog(name, category, report) {
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Ingrédient "générique" (courant, trouvable dans une épicerie classique) -> catalogue
+// partagé. Ingrédient "spécifique" (marqué `"specific": true` dans le JSON de la recette,
+// typiquement un produit ethnique/spécialisé propre aux habitudes d'un utilisateur) ->
+// collection UserIngredient, propre à cet utilisateur.
+async function ensureIngredientInCatalog(name, category, isSpecific, userId, report) {
   const trimmed = name.trim();
-  const existing = await Ingredient.findOne({ name: new RegExp(`^${trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") });
+  const nameRegex = new RegExp(`^${escapeRegExp(trimmed)}$`, "i");
+
+  if (isSpecific) {
+    const existing = await UserIngredient.findOne({ userId, name: nameRegex });
+    if (existing) {
+      report.existing.push(`${trimmed} (spécifique)`);
+      return;
+    }
+    await UserIngredient.create({ userId, name: trimmed, category: category || "Other" });
+    report.addedUser.push({ name: trimmed, category: category || "Other" });
+    return;
+  }
+
+  const existing = await Ingredient.findOne({ name: nameRegex });
   if (existing) {
     report.existing.push(trimmed);
     return;
@@ -85,12 +107,12 @@ async function run() {
   }
 
   for (const recipe of recipes) {
-    const report = { added: [], existing: [] };
+    const report = { added: [], addedUser: [], existing: [] };
     for (const ing of recipe.ingredients || []) {
-      await ensureIngredientInCatalog(ing.name, ing.category, report);
+      await ensureIngredientInCatalog(ing.name, ing.category, ing.specific, user._id, report);
     }
     for (const sp of recipe.spices || []) {
-      await ensureIngredientInCatalog(sp.name, sp.category, report);
+      await ensureIngredientInCatalog(sp.name, sp.category, sp.specific, user._id, report);
     }
 
     const created = await UserMeal.create({
@@ -115,6 +137,10 @@ async function run() {
     if (report.added.length) {
       console.log(`🆕 ${report.added.length} ingrédient(s) ajouté(s) au catalogue partagé:`);
       report.added.forEach((i) => console.log(`  - ${i.name} (${i.category})`));
+    }
+    if (report.addedUser.length) {
+      console.log(`🆕 ${report.addedUser.length} ingrédient(s) spécifique(s) ajouté(s) pour ${user.email}:`);
+      report.addedUser.forEach((i) => console.log(`  - ${i.name} (${i.category})`));
     }
     if (report.existing.length) {
       console.log(`♻️  ${report.existing.length} ingrédient(s) déjà dans le catalogue: ${report.existing.join(", ")}`);

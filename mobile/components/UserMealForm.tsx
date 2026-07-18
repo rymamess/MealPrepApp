@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -29,7 +30,7 @@ import { getContrastTextColor, getRelativeLuminance } from '@/utils/color';
 type Props = {
   meal: Partial<UserMeal>;
   onChange: (key: keyof UserMeal, value: any) => void;
-  onSubmit: () => void;
+  onSubmit: () => void | Promise<void>;
   submitLabel?: string;
 };
 
@@ -87,9 +88,20 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
   const spices = useMemo(() => meal.spices ?? [], [meal.spices]);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [pickerTarget, setPickerTarget] = useState<{ listKey: 'ingredients' | 'spices'; index: number } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const activeStep = steps[activeStepIndex];
   const isLastStep = activeStepIndex === steps.length - 1;
+
+  const handleSubmitPress = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit();
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleListChange = (
     listKey: 'ingredients' | 'spices',
@@ -335,16 +347,29 @@ export const UserMealForm: React.FC<Props> = ({ meal, onChange, onSubmit, submit
         ) : null}
 
         {!isLastStep ? (
-          <Pressable style={[styles.secondaryButton, { borderColor: theme.border }]} onPress={onSubmit}>
-            <Text style={[styles.secondaryLabel, { color: theme.text }]}>{submitLabel}</Text>
+          <Pressable
+            style={[styles.secondaryButton, { borderColor: theme.border, opacity: submitting ? 0.6 : 1 }]}
+            onPress={handleSubmitPress}
+            disabled={submitting}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color={theme.text} />
+            ) : (
+              <Text style={[styles.secondaryLabel, { color: theme.text }]}>{submitLabel}</Text>
+            )}
           </Pressable>
         ) : null}
 
         <Pressable
-          style={[styles.primaryButton, { backgroundColor: theme.tint }]}
-          onPress={isLastStep ? onSubmit : handleNext}
+          style={[styles.primaryButton, { backgroundColor: theme.tint, opacity: submitting ? 0.6 : 1 }]}
+          onPress={isLastStep ? handleSubmitPress : handleNext}
+          disabled={submitting}
         >
-          <Text style={[styles.primaryLabel, { color: tintContrastColor }]}>{isLastStep ? submitLabel : 'Continuer'}</Text>
+          {isLastStep && submitting ? (
+            <ActivityIndicator size="small" color={tintContrastColor} />
+          ) : (
+            <Text style={[styles.primaryLabel, { color: tintContrastColor }]}>{isLastStep ? submitLabel : 'Continuer'}</Text>
+          )}
         </Pressable>
       </View>
     </ScrollView>
